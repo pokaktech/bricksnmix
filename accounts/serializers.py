@@ -1,0 +1,106 @@
+from rest_framework import serializers
+from .models import Category, Subcategory, Banner, Brand, Product, Productimg
+
+# class SubcategorySerializer(serializers.ModelSerializer):
+#     id = serializers.CharField(source='pk')
+#     subcategoryname = serializers.CharField(source='name')
+#     image = serializers.ImageField()
+
+#     class Meta:
+#         model = Subcategory
+#         fields = ['id', 'subcategoryname', 'image']
+
+# class CategorySerializer(serializers.ModelSerializer):
+#     id = serializers.CharField(source='pk')
+#     categoryname = serializers.CharField(source='name')
+#     image = serializers.ImageField()
+#     Subcategory = SubcategorySerializer(many=True, source='subcategories')
+
+#     class Meta:
+#         model = Category
+#         fields = ['id', 'categoryname', 'image', 'Subcategory']
+
+class SubcategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subcategory
+        fields = ['id', 'name', 'image']
+
+class CategorySerializer(serializers.ModelSerializer):
+    subcategories = SubcategorySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'image', 'subcategories']
+        
+class BannerSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(source='pk')
+    bannername = serializers.CharField(source='name')
+    image = serializers.ImageField()
+
+    class Meta:
+        model = Banner
+        fields = ['id', 'bannername', 'image']        
+        
+class BrandSerializer(serializers.ModelSerializer):
+    # id = serializers.IntegerField(required=True)
+    brandname = serializers.CharField(source='name')
+    image = serializers.ImageField()
+
+    class Meta:
+        model = Brand
+        fields = [ 'brandname', 'image']        
+
+
+class OfferProductSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(source='pk')
+    Categoryid = serializers.CharField(source='category.id')
+    Productid = serializers.CharField(source='pk')
+    name = serializers.CharField()
+    Price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    Offerpercent = serializers.DecimalField(max_digits=5, decimal_places=2)
+    actualprice = serializers.DecimalField(max_digits=10, decimal_places=2)
+    image = serializers.ImageField()
+
+    class Meta:
+        model = Product
+        fields = ['id', 'Categoryid', 'Productid', 'name', 'Price', 'Offerpercent', 'actualprice', 'image']        
+        
+
+
+# class ProductImageSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ProductImage
+#         fields = ['image']
+
+# class ProductDetailSerializer(serializers.ModelSerializer):
+#     Categoryid = serializers.CharField(source='category.id')
+#     Productid = serializers.CharField(source='pk')
+#     Price = serializers.DecimalField(max_digits=10, decimal_places=2)
+#     Offerpercent = serializers.DecimalField(max_digits=5, decimal_places=2)
+#     Actualprice = serializers.DecimalField(max_digits=10, decimal_places=2)
+#     Image = ProductImageSerializer(source='images', many=True)
+#     Description = serializers.CharField(source='description')
+#     product_rating = serializers.DecimalField(max_digits=3, decimal_places=2)
+
+#     class Meta:
+#         model = Product
+#         fields = ['id', 'Categoryid', 'Productid', 'name', 'Price', 'Offerpercent', 'Actualprice', 'Image', 'Description', 'product_rating']        
+class ProductimgSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Productimg
+        fields = ['id','image']
+
+class ProductSerializer(serializers.ModelSerializer):
+    images = ProductimgSerializer(many=True, required=False)
+    image = serializers.ImageField(required=False)
+    
+    class Meta:
+        model = Product
+        fields = ['id', 'category', 'name', 'price', 'offer_percent', 'actual_price', 'image', 'description', 'product_rating', 'images']
+
+    def create(self, validated_data):
+        images_data = self.context['request'].FILES.getlist('images')
+        product = Product.objects.create(**validated_data)
+        for image_data in images_data:
+            Productimg.objects.create(product=product, image=image_data)
+        return product
