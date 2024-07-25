@@ -38,12 +38,8 @@ urlpatterns = [
     path('getAllProducts/', ProductDetail.as_view(), name='get-all-products'),
     path('addProduct/', ProductDetail.as_view(), name='add-product'),
     path('getSearchedProducts/', ProductSearchView.as_view(), name='get-searched-products'),
-    # path('getRatingandReviews/', GetRatingAndReviews.as_view(), name='get_rating_and_reviews'),
-    # path('addRatingandReviews/', AddRatingAndReviews.as_view(), name='add_rating_and_reviews'),
     path('reviews/', RatingReviewListCreate.as_view(), name='review_list_create'),
     path('reviews/<int:pk>/', RatingReviewDetail.as_view(), name='review_detail'),
-    # path('updateRatingandReviews/', UpdateRatingAndReviews.as_view(), name='update_rating_and_reviews'),
-    # path('deleteRatingandReviews/', DeleteRatingAndReviews.as_view(), name='delete_rating_and_reviews'),
     path('add_to_cart/', AddToCart.as_view(), name='add_to_cart'),
     path('update_cart/', UpdateCart.as_view(), name='update_cart'),
     
