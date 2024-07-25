@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Subcategory, Banner, Brand, Product, Productimg
-
+from .models import Category, Subcategory, Banner, Brand, Product, Productimg, RatingReview,Cart,CartItem
 # class SubcategorySerializer(serializers.ModelSerializer):
 #     id = serializers.CharField(source='pk')
 #     subcategoryname = serializers.CharField(source='name')
@@ -33,14 +32,17 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'image', 'subcategories']
         
 class BannerSerializer(serializers.ModelSerializer):
-    id = serializers.CharField(source='pk')
     bannername = serializers.CharField(source='name')
     image = serializers.ImageField()
 
     class Meta:
         model = Banner
         fields = ['id', 'bannername', 'image']        
-        
+        # extra_kwargs = {
+        #     'id': {'read_only': True},
+        #     'image': {'required': True}
+        # }
+        read_only_fields = ['id'] 
 class BrandSerializer(serializers.ModelSerializer):
     # id = serializers.IntegerField(required=True)
     brandname = serializers.CharField(source='name')
@@ -96,7 +98,7 @@ class ProductSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = ['id', 'category', 'name', 'price', 'offer_percent', 'actual_price', 'image', 'description', 'product_rating', 'images']
+        fields = ['id', 'category', 'name', 'price', 'offer_percent', 'actual_price', 'image', 'description', 'product_rating', 'stock','images']
 
     def create(self, validated_data):
         images_data = self.context['request'].FILES.getlist('images')
@@ -104,3 +106,23 @@ class ProductSerializer(serializers.ModelSerializer):
         for image_data in images_data:
             Productimg.objects.create(product=product, image=image_data)
         return product
+    
+class RatingReviewSerializer(serializers.ModelSerializer):
+    username = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = RatingReview
+        fields = '__all__'
+        read_only_fields = ('created_at',)  
+
+class CartItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CartItem
+        fields = ['id', 'product', 'quantity']
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True)
+
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'items']    
