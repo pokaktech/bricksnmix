@@ -167,12 +167,22 @@ class Product(models.Model):
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     product_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
+    stock = models.IntegerField(default=0)
     images = models.JSONField(default=list)
     
     def __str__(self):
         return self.name    
     
-    
+class Cart(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+           
 class Productimg(models.Model):
     product = models.ForeignKey(Product, related_name='product_images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to='product_images/')
@@ -186,4 +196,14 @@ class Productimg(models.Model):
 
 #     def __str__(self):
 #         return f"Image for {self.product.name}"
-    
+
+class RatingReview(models.Model):
+    # product_id = models.CharField(max_length=255)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    rating = models.FloatField()
+    comments = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.product_id} - {self.user.username}'    
