@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from orders.models import Order, OrderDetails
 from django.views.generic import View, TemplateView
 from django.views.decorators.csrf import csrf_exempt
-
+from django.http import Http404 
 from django.utils.decorators import method_decorator
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse
@@ -33,36 +33,13 @@ from django.http.response import HttpResponse
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Category, Subcategory
-from .serializers import CategorySerializer
+from rest_framework.permissions import IsAuthenticated
+from .models import Category, Subcategory, RatingReview
+from .serializers import CategorySerializer,RatingReviewSerializer
 from rest_framework import status
-from .models import Banner, Brand, Product, Productimg
-from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer
-# def register(request):
-#     form = UserCreationForm()
-#     if request.method == 'POST':
-#         form = UserCreationForm(request.POST)
-#         # profile_id = request.session.get('ref_profile')
-#         if form.is_valid():
-#             new_user = form.save(commit=False)
-#             # username = form.cleaned_data['username']
-#             # email = form.cleaned_data['email']
-#             new_user.set_password(form.cleaned_data['password1'])
-#             new_user.save()
-#             username = form.cleaned_data['username']
-#             # profile_obj = Profile.objects.get(user__username=username)
-#             # profile_obj.status = 'vendor'
-#             # profile_obj.save()
-#             # messages.success(request, f'Congratulations {username}, your account has been created')
-#             messages.success(
-#                 request, 'Congratulations {}, your account has been created .'.format(new_user))
-#             return redirect('accounts:login')
-
-#     return render(request, 'accounts/page-register.html', {
-#         'title': 'register',
-#         'form': form,
-#     })
-
+from .models import Banner, Brand, Product, Productimg, Cart, CartItem
+from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer
+from django.shortcuts import get_object_or_404
 
 
 class RegisterView(APIView):
@@ -164,35 +141,6 @@ class LoginView(APIView):
             return Response({'Status': '0', 'message': 'Invalid JSON'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'Status': '0', 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-# def login_user(request):
-    # if request.method == 'POST':
-    #     form = LoginForm()
-    #     username = request.POST['username']
-    #     password = request.POST['password']
-    #     print(password)
-    #     try:
-    #         user = authenticate(request, username=User.objects.get(
-    #             email=username), password=password)
-
-    #     except:
-    #         user = authenticate(request, username=username, password=password)
-
-    #     if user is not None:
-    #         login(request, user)
-    #         messages.success(
-    #             request, f'Welcome {username} You are logged in successfully')
-    #         return redirect('accounts:dashboard_customer')
-
-    #     else:
-    #         messages.warning(request, ' username or password is incorrect')
-
-    # else:
-    #     form = LoginForm()
-
-    # return render(request, 'accounts/page-login.html', {
-    #     'title': 'Login',
-    #     'form': form
-    # })
 
 
 def logout_user(request):
@@ -475,6 +423,20 @@ class BannerListView(APIView):
             "Data": serializer.data
         })        
         
+    def post(self, request, format=None):
+        serializer = BannerSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "Status": "1",
+                "message": "Banner added successfully",
+                "Data": serializer.data
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            "Status": "0",
+            "message": "Error",
+            "Errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)    
         
 class AddBrandView(APIView):
     parser_classes = (MultiPartParser, FormParser)
@@ -561,21 +523,7 @@ class OfferProductView(APIView):
 #             "Data": [serializer.data]
 #         })        
 class ProductDetail(APIView):
-
-    # def get(self, request):
-    #     product_id = request.query_params.get('product_id')
-    #     if product_id:
-    #         try:
-    #             product = Product.objects.get(id=product_id)
-    #             serializer = ProductSerializer(product)
-    #             return Response({'Status': '1', 'message': 'Success', 'Data': [serializer.data]}, status=status.HTTP_200_OK)
-    #         except Product.DoesNotExist:
-    #             return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
-    #     else:
-    #         products = Product.objects.all()
-    #         serializer = ProductSerializer(products, many=True)
-    #         return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data}, status=status.HTTP_200_OK)
-    
+    permission_classes = [IsAuthenticated]
     def get(self, request, product_id=None):
         try:
             if product_id is not None:
@@ -640,3 +588,215 @@ class ProductSearchView(APIView):
         else:
             return Response({'Status': '0', 'message': 'Search word not provided'}, status=status.HTTP_400_BAD_REQUEST)
         
+class RatingReviewListCreate(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        reviews = RatingReview.objects.all()
+        serializer = RatingReviewSerializer(reviews, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = RatingReviewSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class RatingReviewDetail(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return RatingReview.objects.get(pk=pk)
+        except RatingReview.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk):
+        review = self.get_object(pk)
+        serializer = RatingReviewSerializer(review)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        review = self.get_object(pk)
+        serializer = RatingReviewSerializer(review, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk):
+        review = self.get_object(pk)
+        serializer = RatingReviewSerializer(review, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        review = self.get_object(pk)
+        review.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+# class GetRatingAndReviews(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         reviews = RatingReview.objects.all()
+#         serializer = RatingReviewSerializer(reviews, many=True)
+#         return Response(serializer.data)
+
+#     def post(self, request):
+#         serializer = RatingReviewSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class AddRatingAndReviews(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request, *args, **kwargs):
+#         product_id = request.data.get('productid')
+#         rating = request.data.get('rating')
+#         user_id = request.data.get('Userid')
+#         comments = request.data.get('comments', '')
+
+#         if not product_id or not rating or not user_id:
+#             return Response({'Status': '0', 'message': 'Product ID, rating, and user ID are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         user = User.objects.get(id=user_id)
+#         review = RatingReview.objects.create(product_id=product_id, rating=rating, user=user, comments=comments)
+#         review.save()
+
+#         return Response({'Status': '1', 'message': 'Success'}, status=status.HTTP_201_CREATED)        
+    
+# class UpdateRatingAndReviews(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request):
+#         rating_id = request.data.get("ratingid")
+#         product_id = request.data.get("productid")
+#         rating = request.data.get("rating")
+#         user_id = request.data.get("Userid")
+#         comments = request.data.get("comments")
+
+#         if not rating_id or not product_id or not rating or not user_id:
+#             return JsonResponse({"Status": "0", "message": "Rating ID, Product ID, rating, and User ID are required"}, status=400)
+
+#         try:
+#             review = RatingReview.objects.get(id=rating_id)
+#             product = Product.objects.get(id=product_id)
+#             user = User.objects.get(id=user_id)
+#         except RatingReview.DoesNotExist:
+#             return JsonResponse({"Status": "0", "message": "Rating and Review not found"}, status=404)
+#         except Product.DoesNotExist:
+#             return JsonResponse({"Status": "0", "message": "Product not found"}, status=404)
+#         except User.DoesNotExist:
+#             return JsonResponse({"Status": "0", "message": "User not found"}, status=404)
+
+#         review.product = product
+#         review.user = user
+#         review.rating = rating
+#         review.comments = comments
+#         review.save()
+        
+#         return JsonResponse({"Status": "1", "message": "Success"}, status=200)
+
+
+# class DeleteRatingAndReviews(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request):
+#         rating_id = request.data.get("ratingid")
+#         product_id = request.data.get("productid")
+
+#         if not rating_id or not product_id:
+#             return JsonResponse({"Status": "0", "message": "Rating ID and Product ID are required"}, status=400)
+
+#         try:
+#             review = RatingReview.objects.get(id=rating_id, product_id=product_id)
+#         except RatingReview.DoesNotExist:
+#             return JsonResponse({"Status": "0", "message": "Rating and Review not found"}, status=404)
+
+#         review.delete()
+#         return JsonResponse({"Status": "1", "message": "Success"}, status=200)    
+    
+class AddToCart(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        product_id = request.data.get('productid')
+        quantity = request.data.get('quantity')
+
+        # Debugging print statements
+        print(f"Request data: Product ID = {product_id}, Quantity = {quantity}")
+
+        if not product_id or not quantity:
+            return Response({'Status': '0', 'message': 'Product ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+
+        # Debugging print statement
+        print(f"User ID: {user.id}")
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Debugging print statement
+        print(f"Product ID: {product.id}, Stock: {product.stock}")
+
+        if product.stock < int(quantity):
+            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cart, created = Cart.objects.get_or_create(user=user)
+        # Debugging print statement
+        print(f"Cart ID: {cart.id}, Created: {created}")
+
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+        # Debugging print statement
+        print(f"Cart Item: {cart_item}, Created: {created}")
+
+        if created:
+            cart_item.quantity = int(quantity)
+        else:
+            if cart_item.quantity + int(quantity) > product.stock:
+                return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+            cart_item.quantity += int(quantity)
+
+        cart_item.save()
+
+        # Update the product stock
+        product.stock -= int(quantity)
+        if product.stock < 0:
+            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+        product.save()
+
+        return Response({"Status": "1", "message": "Product added to cart successfully"}, status=status.HTTP_201_CREATED)
+
+class UpdateCart(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        cart_item_id = request.data.get('Cartid')
+        quantity = request.data.get('quantity')
+
+        if not cart_item_id or not quantity:
+            return Response({'Status': '0', 'message': 'Cart ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            cart_item = CartItem.objects.get(id=cart_item_id)
+        except CartItem.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if cart_item.product.stock + cart_item.quantity < int(quantity):
+            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cart_item.product.stock += cart_item.quantity - int(quantity)
+        cart_item.product.save()
+        cart_item.quantity = int(quantity)
+        cart_item.save()
+
+        return Response({"Status": "1", "message": "Cart updated successfully"}, status=status.HTTP_200_OK)    
