@@ -5,8 +5,8 @@ from django.conf.urls.static import static
 from django.urls import reverse_lazy
 from django.contrib.auth import views as auth_views
 from .forms import CaptchaPasswordResetForm
-from .views import CategoryListView,CategoryCreateView,RegisterView, LoginView
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView
+from .views import CategoryListView,CategoryCreateView,RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -29,7 +29,7 @@ urlpatterns = [
     path('getCategories/', CategoryListView.as_view(), name='get-categories'),
     path('addCategory/', CategoryCreateView.as_view(), name='add-category'),
 
-    path('getBanners/', BannerListView.as_view(), name='get-banners'),
+    path('banners/', BannerListView.as_view(), name='get-banners'),
     path('addBrand/', AddBrandView.as_view(), name='add-brand'),
     path('getTrendingBrands/', TrendingBrandsView.as_view(), name='get-trending-brands'),
     path('getOfferProducts/', OfferProductView.as_view(), name='get-offer-products'),
@@ -37,8 +37,15 @@ urlpatterns = [
     path('getProductDetails/', ProductDetail.as_view(), name='get-product-details'),
     path('getAllProducts/', ProductDetail.as_view(), name='get-all-products'),
     path('addProduct/', ProductDetail.as_view(), name='add-product'),
-     path('getSearchedProducts/', ProductSearchView.as_view(), name='get-searched-products'),
-    
+    path('getSearchedProducts/', ProductSearchView.as_view(), name='get-searched-products'),
+    # path('getRatingandReviews/', GetRatingAndReviews.as_view(), name='get_rating_and_reviews'),
+    # path('addRatingandReviews/', AddRatingAndReviews.as_view(), name='add_rating_and_reviews'),
+    path('reviews/', RatingReviewListCreate.as_view(), name='review_list_create'),
+    path('reviews/<int:pk>/', RatingReviewDetail.as_view(), name='review_detail'),
+    # path('updateRatingandReviews/', UpdateRatingAndReviews.as_view(), name='update_rating_and_reviews'),
+    # path('deleteRatingandReviews/', DeleteRatingAndReviews.as_view(), name='delete_rating_and_reviews'),
+    path('add_to_cart/', AddToCart.as_view(), name='add_to_cart'),
+    path('update_cart/', UpdateCart.as_view(), name='update_cart'),
     
     path('dashboard/order/<int:order_id>/', views.order, name='order'),
 
