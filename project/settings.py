@@ -25,18 +25,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-%eckd70i##mznm!a55p^yb&3unlw3!r)d3_g*=1zrx$_*_hy^5'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = [ "195.35.20.1",
-                   "bricksnmix.com"]
+# ALLOWED_HOSTS = [ "195.35.20.1",
+#                    "bricksnmix.com"]
 
-
+ALLOWED_HOSTS = ["*", "572d-156-209-45-224.ngrok.io",
+                 "www.572d-156-209-45-224.ngrok.io", "127.0.0.1", "127.0.0.1:8000"]
 # Application definition
 
 INSTALLED_APPS = [
     # General use templates & template tags (should appear first)
     'adminlte3',
-    # Optional: Django admin theme (must be before django.contrib.admin)
     'adminlte3_theme',
     'django.contrib.admin',
     'django.contrib.auth',
