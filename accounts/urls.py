@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.contrib.auth import views as auth_views
 from .forms import CaptchaPasswordResetForm
 from .views import CategoryListView,CategoryCreateView,RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -40,6 +40,7 @@ urlpatterns = [
     path('getSearchedProducts/', ProductSearchView.as_view(), name='get-searched-products'),
     path('reviews/', RatingReviewListCreate.as_view(), name='review_list_create'),
     path('reviews/<int:pk>/', RatingReviewDetail.as_view(), name='review_detail'),
+    path('get_cart/', GetCart.as_view(), name='get_cart'),
     path('add_to_cart/', AddToCart.as_view(), name='add_to_cart'),
     path('update_cart/', UpdateCart.as_view(), name='update_cart'),
     

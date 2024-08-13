@@ -637,90 +637,7 @@ class RatingReviewDetail(APIView):
         review = self.get_object(pk)
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-# class GetRatingAndReviews(APIView):
-#     permission_classes = [IsAuthenticated]
 
-#     def get(self, request):
-#         reviews = RatingReview.objects.all()
-#         serializer = RatingReviewSerializer(reviews, many=True)
-#         return Response(serializer.data)
-
-#     def post(self, request):
-#         serializer = RatingReviewSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# class AddRatingAndReviews(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request, *args, **kwargs):
-#         product_id = request.data.get('productid')
-#         rating = request.data.get('rating')
-#         user_id = request.data.get('Userid')
-#         comments = request.data.get('comments', '')
-
-#         if not product_id or not rating or not user_id:
-#             return Response({'Status': '0', 'message': 'Product ID, rating, and user ID are required'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         user = User.objects.get(id=user_id)
-#         review = RatingReview.objects.create(product_id=product_id, rating=rating, user=user, comments=comments)
-#         review.save()
-
-#         return Response({'Status': '1', 'message': 'Success'}, status=status.HTTP_201_CREATED)        
-    
-# class UpdateRatingAndReviews(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request):
-#         rating_id = request.data.get("ratingid")
-#         product_id = request.data.get("productid")
-#         rating = request.data.get("rating")
-#         user_id = request.data.get("Userid")
-#         comments = request.data.get("comments")
-
-#         if not rating_id or not product_id or not rating or not user_id:
-#             return JsonResponse({"Status": "0", "message": "Rating ID, Product ID, rating, and User ID are required"}, status=400)
-
-#         try:
-#             review = RatingReview.objects.get(id=rating_id)
-#             product = Product.objects.get(id=product_id)
-#             user = User.objects.get(id=user_id)
-#         except RatingReview.DoesNotExist:
-#             return JsonResponse({"Status": "0", "message": "Rating and Review not found"}, status=404)
-#         except Product.DoesNotExist:
-#             return JsonResponse({"Status": "0", "message": "Product not found"}, status=404)
-#         except User.DoesNotExist:
-#             return JsonResponse({"Status": "0", "message": "User not found"}, status=404)
-
-#         review.product = product
-#         review.user = user
-#         review.rating = rating
-#         review.comments = comments
-#         review.save()
-        
-#         return JsonResponse({"Status": "1", "message": "Success"}, status=200)
-
-
-# class DeleteRatingAndReviews(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request):
-#         rating_id = request.data.get("ratingid")
-#         product_id = request.data.get("productid")
-
-#         if not rating_id or not product_id:
-#             return JsonResponse({"Status": "0", "message": "Rating ID and Product ID are required"}, status=400)
-
-#         try:
-#             review = RatingReview.objects.get(id=rating_id, product_id=product_id)
-#         except RatingReview.DoesNotExist:
-#             return JsonResponse({"Status": "0", "message": "Rating and Review not found"}, status=404)
-
-#         review.delete()
-#         return JsonResponse({"Status": "1", "message": "Success"}, status=200)    
     
 class AddToCart(APIView):
     permission_classes = [IsAuthenticated]
@@ -775,28 +692,141 @@ class AddToCart(APIView):
         product.save()
 
         return Response({"Status": "1", "message": "Product added to cart successfully"}, status=status.HTTP_201_CREATED)
+    
+class GetCart(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        try:
+            cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        cart_items = CartItem.objects.filter(cart=cart)
+
+        # Prepare the cart items data
+        items = []
+        for item in cart_items:
+            items.append({
+                'product_id': item.product.id,
+                'product_name': item.product.name,
+                'quantity': item.quantity,
+                'price_per_item': item.product.price,
+                'total_price': item.quantity * item.product.price
+            })
+
+        return Response({
+            'Status': '1',
+            'cart_id': cart.id,
+            'total_items': len(items),
+            'items': items,
+        }, status=status.HTTP_200_OK)    
 
 class UpdateCart(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     def post(self, request):
-        cart_item_id = request.data.get('Cartid')
+        product_id = request.data.get('productid')
         quantity = request.data.get('quantity')
 
-        if not cart_item_id or not quantity:
-            return Response({'Status': '0', 'message': 'Cart ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
+        if not product_id or not quantity:
+            return Response({'Status': '0', 'message': 'Product ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            cart_item = CartItem.objects.get(id=cart_item_id)
+            quantity = int(quantity)
+            if quantity <= 0:
+                return Response({'Status': '0', 'message': 'Quantity must be a positive integer'}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError:
+            return Response({'Status': '0', 'message': 'Quantity must be a valid integer'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            cart_item = CartItem.objects.get(cart__user=user, product=product)
         except CartItem.DoesNotExist:
             return Response({'Status': '0', 'message': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if cart_item.product.stock + cart_item.quantity < int(quantity):
+        # Check if the stock is sufficient
+        if product.stock >= quantity:
+            # Calculate the change in quantity
+            quantity_difference = quantity - cart_item.quantity
+
+            # Update the cart item quantity
+            cart_item.quantity = quantity
+            cart_item.save()
+
+            # Adjust the product stock
+            product.stock -= quantity_difference
+            product.save()
+
+            return Response({'Status': '1', 'message': 'Cart item updated successfully'}, status=status.HTTP_200_OK)
+        else:
+            # Insufficient stock case
             return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+    
 
-        cart_item.product.stock += cart_item.quantity - int(quantity)
-        cart_item.product.save()
-        cart_item.quantity = int(quantity)
-        cart_item.save()
+    # def post(self, request):
+    #     product_id = request.data.get('productid')
+    #     quantity = request.data.get('quantity')
 
-        return Response({"Status": "1", "message": "Cart updated successfully"}, status=status.HTTP_200_OK)    
+    #     # if not product_id or not quantity:
+    #     #     return Response({'Status': '0', 'message': 'Product ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    #     # try:
+    #     #     quantity = int(quantity)
+    #     #     if quantity <= 0:
+    #     #         return Response({'Status': '0', 'message': 'Quantity must be a positive integer'}, status=status.HTTP_400_BAD_REQUEST)
+    #     # except ValueError:
+    #     #     return Response({'Status': '0', 'message': 'Quantity must be a valid integer'}, status=status.HTTP_400_BAD_REQUEST)
+
+    #     # user = request.user
+
+    #     # try:
+    #     #     cart = Cart.objects.get(user=user)
+    #     # except Cart.DoesNotExist:
+    #     #     return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    #     # try:
+    #     #     cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
+    #     # except CartItem.DoesNotExist:
+    #     #     return Response({'Status': '0', 'message': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    #     # product = cart_item.product
+
+    #     # if quantity > product.stock + cart_item.quantity:
+    #     #     return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+
+    #     # # Calculate the change in quantity
+    #     # quantity_difference = quantity - cart_item.quantity
+
+    #     # # Update the cart item quantity
+    #     # cart_item.quantity = quantity
+    #     # cart_item.save()
+
+    #     # # Adjust the product stock
+    #     # product.stock -= quantity_difference
+    #     # product.save()
+    #     product = Product.objects.get(id=product_id)
+    #     cart_item = CartItem.objects.get(product=product)
+    #     print(cart_item.product)
+    #     # try:
+    #     if product.stock >= quantity:
+    #             cart_item.quantity = quantity
+    #             cart_item.save()
+    #             return Response({'Status': '1', 'message': 'Cart item updated successfully'}, status=status.HTTP_200_OK)
+    #     # except:
+    #     else:
+    #         print("noo----------------------------------------")
+    #         return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+            # cart_item.quantity = quantity
+            # cart_item.save()
+            # return Response({'Status': '1', 'message': 'Cart item updated successfully'}, status=status.HTTP_200_OK)
+
+   
