@@ -174,17 +174,9 @@ class Product(models.Model):
     
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-<<<<<<< HEAD
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=1)
-    # order = models.OneToOneField('Order', on_delete=models.SET_NULL, blank=True, null=True)
-    # def __str__(self):
-    #     return f'{self.quantity} x {self.product.name}'
-=======
     # product = models.ForeignKey(Product, on_delete=models.CASCADE)
     # quantity = models.IntegerField(default=1)
->>>>>>> debf1e3a062c8a5b62f761a952fe7ce9a5e39838
-
+  
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)

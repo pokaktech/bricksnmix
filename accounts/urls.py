@@ -7,12 +7,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import CategoryListView,CategoryCreateView,RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-<<<<<<< HEAD
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart
-from .views import PlaceOrderView, GetOrdersView, GetDeliveryChargeView
-=======
 from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart
->>>>>>> debf1e3a062c8a5b62f761a952fe7ce9a5e39838
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
