@@ -6,7 +6,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.text import slugify
 from .utils import code_generator, create_shortcode
 
-
 class Profile(models.Model):
     image = models.ImageField(
         upload_to='profile_pic/', blank=True, null=True, )
@@ -177,6 +176,9 @@ class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
+    # order = models.OneToOneField('Order', on_delete=models.SET_NULL, blank=True, null=True)
+    # def __str__(self):
+    #     return f'{self.quantity} x {self.product.name}'
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
@@ -206,4 +208,56 @@ class RatingReview(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.product_id} - {self.user.username}'    
+        return f'{self.product_id} - {self.user.username}'
+
+class DeliveryAddress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    mobile = models.CharField(max_length=15)
+    housename = models.CharField(max_length=255, blank=True, null=True)
+    place = models.CharField(max_length=255, blank=True, null=True)
+    district = models.CharField(max_length=100, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.mobile}"
+
+class CustomerOrder(models.Model):
+    STATUS_CHOICES = [
+        ('Ordered', 'Ordered'),
+        ('Shipped', 'Shipped'),
+        ('Delivered', 'Delivered'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    status = models.CharField(max_length=50, choices=[('1', 'Ordered'), ('2', 'Shipped'), ('3', 'Delivered')], default='1')
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    delivery_charge = models.DecimalField(max_digits=10, decimal_places=2)
+    net_total = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_type = models.CharField(max_length=50, blank=True, null=True)
+    delivery_address = models.ForeignKey(DeliveryAddress, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Order {self.id} by {self.user.username}"
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(CustomerOrder, related_name='items', on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.quantity} of {self.product.name}"
+
+class ProductImage(models.Model):
+    order_item = models.ForeignKey(OrderItem, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='order_item_images/')
+
+    def __str__(self):
+        return f"Image for {self.order_item.product.name}"
+
+
+

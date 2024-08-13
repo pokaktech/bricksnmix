@@ -40,6 +40,10 @@ from rest_framework import status
 from .models import Banner, Brand, Product, Productimg, Cart, CartItem
 from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer
 from django.shortcuts import get_object_or_404
+from .models import CustomerOrder, OrderItem
+from .serializers import CustomerOrderSerializer, OrderItemSerializer
+
+
 
 
 class RegisterView(APIView):
@@ -799,4 +803,37 @@ class UpdateCart(APIView):
         cart_item.quantity = int(quantity)
         cart_item.save()
 
-        return Response({"Status": "1", "message": "Cart updated successfully"}, status=status.HTTP_200_OK)    
+        return Response({"Status": "1", "message": "Cart updated successfully"}, status=status.HTTP_200_OK)  
+
+class PlaceOrderView(APIView):
+    def post(self, request):
+        serializer = CustomerOrderSerializer(data=request.data)
+        if serializer.is_valid():
+            order = serializer.save()
+            # Handle OrderItem creation here
+            for item_data in request.data.get('Data', []):
+                item_data['order'] = order.id
+                item_serializer = OrderItemSerializer(data=item_data)
+                if item_serializer.is_valid():
+                    item_serializer.save()
+            return Response({"Status": "1", "message": "Success"}, status=status.HTTP_201_CREATED)
+        return Response({"Status": "0", "message": "Failed", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+class GetOrdersView(APIView):
+    def post(self, request):
+        user_id = request.data.get('userid')
+        orders = CustomerOrder.objects.filter(user_id=user_id)
+        if orders.exists():
+            order = orders.first()  # Assuming you want to return the first order
+            serializer = CustomerOrderSerializer(order)
+            return Response({"Status": "1", "message": "Success", "data": serializer.data})
+        return Response({"Status": "0", "message": "No orders found"}, status=status.HTTP_404_NOT_FOUND)
+
+class GetDeliveryChargeView(APIView):
+    def get(self, request):
+        # You can set a fixed delivery charge or calculate it based on some logic
+        delivery_charge = 10.22  # Example value
+        return Response({"Status": "1", "message": "Success", "Deliverycharge": delivery_charge})
+  
+
+        
