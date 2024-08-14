@@ -195,7 +195,7 @@ class Productimg(models.Model):
 #     image = models.ImageField(upload_to='product_images/')
 
 #     def __str__(self):
-#         return f"Image for {self.product.name}"
+#         return f"Image for {self.product.name
 
 class RatingReview(models.Model):
     # product_id = models.CharField(max_length=255)
