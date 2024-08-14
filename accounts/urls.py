@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import reverse_lazy
 from django.contrib.auth import views as auth_views
+from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import CategoryListView,CategoryCreateView,RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
 from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart
@@ -11,6 +12,7 @@ from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProduct
 #     TokenObtainPairView,
 #     TokenRefreshView,
 # )
+
 app_name = 'accounts'
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -62,8 +64,9 @@ urlpatterns = [
     path('download-list/', views.download_list, name="download-list"),
     path('download_file/<int:order_id>/<str:filename>/',
          views.download_file, name="download-file"),
-
-
+    path('place_order/', PlaceOrderView.as_view(), name='place_order'),
+    path('get_orders/', GetOrdersView.as_view(), name='get_orders'),
+    path('get_delivery_charge/', GetDeliveryChargeView.as_view(), name='get_delivery_charge'),
 ]
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

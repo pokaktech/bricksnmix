@@ -27,7 +27,7 @@ urlpatterns = [
     path('captcha/', include('captcha.urls')),
     path('', include('home.urls', namespace='home')),
     path('', include('products.urls', namespace='products')),
-    path('', include('accounts.urls', namespace='accounts')),
+     path('accounts/', include('accounts.urls')),
     path('', include('orders.urls', namespace='orders')),
     path('', include('categories.urls', namespace='categories')),
     path('', include('suppliers.urls', namespace='suppliers')),

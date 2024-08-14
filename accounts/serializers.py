@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Subcategory, Banner, Brand, Product, Productimg, RatingReview,Cart,CartItem
+from .models import Category, Subcategory, Banner, Brand, Product, Productimg, RatingReview,Cart, CartItem, CustomerOrder, OrderItem, DeliveryAddress, ProductImage
 # class SubcategorySerializer(serializers.ModelSerializer):
 #     id = serializers.CharField(source='pk')
 #     subcategoryname = serializers.CharField(source='name')
@@ -125,4 +125,26 @@ class CartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cart
-        fields = ['id', 'user', 'items']    
+        fields = ['id', 'user', 'items']
+
+class DeliveryAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryAddress
+        fields = '__all__'
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['image']
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'order', 'product', 'quantity', 'price', 'images']
+
+class CustomerOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerOrder
+        fields = ['id', 'user', 'status', 'total_price', 'delivery_charge', 'net_total', 'payment_type', 'delivery_address', 'created_at', 'updated_at']
