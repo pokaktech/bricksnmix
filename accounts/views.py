@@ -779,6 +779,37 @@ class AddToCart(APIView):
         product.save()
 
         return Response({"Status": "1", "message": "Product added to cart successfully"}, status=status.HTTP_201_CREATED)
+    
+class GetCart(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        try:
+            cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        cart_items = CartItem.objects.filter(cart=cart)
+
+        # Prepare the cart items data
+        items = []
+        for item in cart_items:
+            items.append({
+                'product_id': item.product.id,
+                'product_name': item.product.name,
+                'quantity': item.quantity,
+                'price_per_item': item.product.price,
+                'total_price': item.quantity * item.product.price
+            })
+
+        return Response({
+            'Status': '1',
+            'cart_id': cart.id,
+            'total_items': len(items),
+            'items': items,
+        }, status=status.HTTP_200_OK)        
 
 class UpdateCart(APIView):
     permission_classes = [IsAuthenticated]

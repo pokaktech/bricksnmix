@@ -147,7 +147,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'bricksnmix',
         'USER': 'postgres',
-        'PASSWORD': 'Nair1234@',
+        'PASSWORD': 'admin',
         'HOST': 'localhost',  # Or your database host
         'PORT': '5432',       # Default PostgreSQL port
     }
