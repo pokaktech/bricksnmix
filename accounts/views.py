@@ -42,9 +42,8 @@ from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializ
 from django.shortcuts import get_object_or_404
 from .models import CustomerOrder, OrderItem
 from .serializers import CustomerOrderSerializer, OrderItemSerializer
-
-
-
+from accounts.models import DeliveryAddress
+from .models import Wishlist, WishlistItem
 
 class RegisterView(APIView):
     def post(self, request, *args, **kwargs):
@@ -865,6 +864,69 @@ class GetDeliveryChargeView(APIView):
         # You can set a fixed delivery charge or calculate it based on some logic
         delivery_charge = 10.22  # Example value
         return Response({"Status": "1", "message": "Success", "Deliverycharge": delivery_charge})
-  
+
+class DeleteFromCart(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        cart_item_id = request.data.get('Cartid')
+
+        if not cart_item_id:
+            return Response({'Status': '0', 'message': 'Cart ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            cart_item = CartItem.objects.get(id=cart_item_id)
+        except CartItem.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Restore the product stock before deleting the item
+        cart_item.product.stock += cart_item.quantity
+        cart_item.product.save()
+
+        cart_item.delete()
+
+        return Response({"Status": "1", "message": "Item removed from cart successfully"}, status=status.HTTP_200_OK)
+
+class AddToWishlist(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        product_id = request.data.get('productid')
+
+        if not product_id:
+            return Response({'Status': '0', 'message': 'Product ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        wishlist, created = Wishlist.objects.get_or_create(user=user)
+        wishlist_item, created = WishlistItem.objects.get_or_create(wishlist=wishlist, product=product)
+
+        if created:
+            return Response({'Status': '1', 'message': 'Success'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'Status': '0', 'message': 'Product already in wishlist'}, status=status.HTTP_200_OK)
+
+class DeleteFromWishlist(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        wishlist_item_id = request.data.get('wishlistid')
+
+        if not wishlist_item_id:
+            return Response({'Status': '0', 'message': 'Wishlist ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            wishlist_item = WishlistItem.objects.get(id=wishlist_item_id)
+        except WishlistItem.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Wishlist item not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        wishlist_item.delete()
+
+        return Response({"Status": "1", "message": "Success"}, status=status.HTTP_200_OK)
 
         

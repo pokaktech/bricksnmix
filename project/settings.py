@@ -124,17 +124,20 @@ TEMPLATES = [
 
 from datetime import timedelta
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+     'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
     ],
 }
 
 SIMPLE_JWT = {
-    'AUTH_HEADER_TYPES': ('JWT',),
+    'AUTH_HEADER_TYPES': ('Bearer',),
     'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-
 }
+
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
@@ -147,7 +150,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'bricksnmix',
         'USER': 'postgres',
-        'PASSWORD': 'admin',
+        'PASSWORD': 'Nair1234@',
         'HOST': 'localhost',  # Or your database host
         'PORT': '5432',       # Default PostgreSQL port
     }

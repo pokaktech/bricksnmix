@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Category, Subcategory, Banner, Brand, Product, Productimg, RatingReview,Cart, CartItem, CustomerOrder, OrderItem, DeliveryAddress, ProductImage
+from django.contrib.auth.models import User
 # class SubcategorySerializer(serializers.ModelSerializer):
 #     id = serializers.CharField(source='pk')
 #     subcategoryname = serializers.CharField(source='name')
@@ -148,3 +149,5 @@ class CustomerOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerOrder
         fields = ['id', 'user', 'status', 'total_price', 'delivery_charge', 'net_total', 'payment_type', 'delivery_address', 'created_at', 'updated_at']
+
+
