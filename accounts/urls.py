@@ -7,19 +7,19 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import CategoryListView,CategoryCreateView,RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView
+# from rest_framework_simplejwt.views import (
+#     TokenObtainPairView,
+#     TokenRefreshView,
+# )
 
 app_name = 'accounts'
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
 
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', views.logout_user, name='logout'),
     path('dashboard/', views.dashboard_customer, name='dashboard_customer'),
     path('order-tracking/', views.order_tracking, name="order_tracking"),
@@ -70,6 +70,7 @@ urlpatterns = [
     path('delete_from_cart/', DeleteFromCart.as_view(), name='delete_from_cart'),
     path('add_to_wishlist/', AddToWishlist.as_view(), name='add_to_wishlist'),
     path('delete_from_wishlist/', DeleteFromWishlist.as_view(), name='delete_from_wishlist'),
+    path('update_profile/', UpdateProfileView.as_view(), name='update_profile'),
 ]
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

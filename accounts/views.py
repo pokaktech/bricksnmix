@@ -44,7 +44,6 @@ from .models import CustomerOrder, OrderItem
 from .serializers import CustomerOrderSerializer, OrderItemSerializer
 from accounts.models import DeliveryAddress
 from .models import Wishlist, WishlistItem
-
 class RegisterView(APIView):
     def post(self, request, *args, **kwargs):
         try:
@@ -929,4 +928,62 @@ class DeleteFromWishlist(APIView):
 
         return Response({"Status": "1", "message": "Success"}, status=status.HTTP_200_OK)
 
-        
+class UpdateProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            user_id = request.data.get('Userid')
+            name = request.data.get('Name')
+            phone = request.data.get('Phone')
+            user_type = request.data.get('Type')
+            gst = request.data.get('Gst')
+            shopname = request.data.get('Shopname')
+            logoimage = request.data.get('Logoimage')
+            company_name = request.data.get('Company name')
+            latitude = request.data.get('Latitude')
+            longitude = request.data.get('longitude')
+            password = request.data.get('Password')
+
+            if not user_id:
+                return Response({'Status': '0', 'message': 'User ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response({'Status': '0', 'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            profile, created = Profile.objects.get_or_create(user=user)
+
+            if name:
+                profile.name = name
+            if phone:
+                profile.phone = phone
+            if user_type:
+                profile.type = user_type
+                profile.status = 'vendor' if user_type.lower() == 'seller' else 'customer'
+            if gst:
+                profile.gst = gst
+            if shopname:
+                profile.shopname = shopname
+            if company_name:
+                profile.company_name = company_name
+            if latitude:
+                profile.latitude = latitude
+            if longitude:
+                profile.longitude = longitude
+            if logoimage:
+                profile.logoimage = logoimage
+            if password:
+                user.set_password(password)
+                user.save()
+
+            profile.save()
+
+            return Response({
+                'Status': '1',
+                'message': 'Success'
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'Status': '0', 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
