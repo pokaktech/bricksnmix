@@ -44,6 +44,15 @@ from .models import CustomerOrder, OrderItem
 from .serializers import CustomerOrderSerializer, OrderItemSerializer
 from accounts.models import DeliveryAddress
 from .models import Wishlist, WishlistItem
+from .models import BankAccount
+from .serializers import BankAccountSerializer
+from rest_framework import generics
+from .models import BankAccount
+from .serializers import BankAccountSerializer, ProfileSerializer
+from .models import SocialLink
+from .serializers import SocialLinkSerializer
+
+
 class RegisterView(APIView):
     def post(self, request, *args, **kwargs):
         try:
@@ -986,4 +995,26 @@ class UpdateProfileView(APIView):
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return Response({'Status': '0', 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
+            return Response({'Status': '0', 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)  
+
+class ProfileListCreateView(generics.ListCreateAPIView):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+
+class ProfileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer  
+class BankAccountListCreateView(generics.ListCreateAPIView):
+    queryset = BankAccount.objects.all()
+    serializer_class = BankAccountSerializer
+
+class BankAccountRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = BankAccount.objects.all()
+    serializer_class = BankAccountSerializer
+class SocialLinkListCreateView(generics.ListCreateAPIView):
+    queryset = SocialLink.objects.all()
+    serializer_class = SocialLinkSerializer
+
+class SocialLinkRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = SocialLink.objects.all()
+    serializer_class = SocialLinkSerializer

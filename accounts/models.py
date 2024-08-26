@@ -32,17 +32,17 @@ class Profile(models.Model):
         default=customer,
         blank=True, null=True,
     )
-    admission = models.BooleanField(default=False, verbose_name=_("admission") , blank=True, null=True)
-    code = models.CharField(max_length=250, blank=True, null=True)
-    recommended_by = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="recommended_by", blank=True, null=True)
-    referrals = models.IntegerField(default=0, blank=True, null=True)
-    blance = models.FloatField(default=0.00, blank=True, null=True)
-    requested = models.FloatField(default=0.00, blank=True, null=True)
-    date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    date_update = models.DateTimeField(auto_now=True, blank=True, null=True)
-    slug = models.SlugField(
-        blank=True, null=True, allow_unicode=True, unique=True, verbose_name=_("Slugfiy"))
+    # admission = models.BooleanField(default=False, verbose_name=_("admission") , blank=True, null=True)
+    # code = models.CharField(max_length=250, blank=True, null=True)
+    # recommended_by = models.ForeignKey(
+    #     User, on_delete=models.CASCADE, related_name="recommended_by", blank=True, null=True)
+    # referrals = models.IntegerField(default=0, blank=True, null=True)
+    # blance = models.FloatField(default=0.00, blank=True, null=True)
+    # requested = models.FloatField(default=0.00, blank=True, null=True)
+    # date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    # date_update = models.DateTimeField(auto_now=True, blank=True, null=True)
+    # slug = models.SlugField(
+        # blank=True, null=True, allow_unicode=True, unique=True, verbose_name=_("Slugfiy"))
 
     email = models.EmailField(max_length=254, blank=True, null=True)
     name = models.CharField(max_length=100, blank=True, null=True)
@@ -167,7 +167,7 @@ class Product(models.Model):
     description = models.TextField(blank=True, null=True)
     product_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
     stock = models.IntegerField(default=0)
-    images = models.JSONField(default=list)
+    images = models.JSONField(blank=True,null=True)
     
     def __str__(self):
         return self.name    

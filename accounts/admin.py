@@ -1,11 +1,11 @@
 from django.contrib import admin
-from .models import Profile,BankAccount ,SocialLink
+from .models import Profile,BankAccount ,SocialLink, Product, Category
 # Register your models here.
 
 class ProfileAdmin(admin.ModelAdmin):
     #fields = ("","")
     # inlines = [ ]
-    list_display = ('id', 'user', 'mobile_number', 'country', 'blance',"status" , "admission")
+    list_display = ('id', 'user', 'phone', 'email', 'city',"country" , "company_name")
     list_filter = ("status",)
     # list_editable = ()
     list_display_links = ("id", 'user', )
@@ -37,6 +37,23 @@ class SocialLinkAdmin(admin.ModelAdmin):
     search_fields = ("id", )
     list_per_page = 10    
 
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category', 'price', 'offer_percent', 'actual_price', 'product_rating', 'stock')
+    list_filter = ('category', 'price', 'product_rating')
+    search_fields = ('name', 'description')
+    ordering = ('-price',)
+    readonly_fields = ('product_rating',)
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'category', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'image')
+        }),
+        ('Additional Information', {
+            'classes': ('collapse',),
+            'fields': ('product_rating', 'images'),
+        }),
+    )
+
 admin.site.register(Profile,ProfileAdmin)
 admin.site.register(BankAccount,BankAccountAdmin)
 admin.site.register(SocialLink,SocialLinkAdmin)
+admin.site.register(Product, ProductAdmin)

@@ -52,7 +52,7 @@ class Product(models.Model):
     digital_file = models.FileField(
         upload_to='products/files/', verbose_name=_("Digital File"), blank=True, null=True, help_text=_("Please use our recommended allowed extension are zip , rar"), validators=[FileExtensionValidator(allowed_extensions=['zip', 'rar'])])
     # DESCRIPTION
-    product_description = models.TextField(verbose_name=_("Short Description"))
+    # product_description = models.TextField(verbose_name=_("Short Description"))
     product_image = models.ImageField(
         upload_to='products/imgs/', default='products/product.jpg', max_length=500, verbose_name=_("Product Image"))
     product_minicategor = models.ForeignKey(

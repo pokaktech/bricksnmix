@@ -12,11 +12,25 @@ from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProduct
 #     TokenObtainPairView,
 #     TokenRefreshView,
 # )
+from .views import (
+    ProfileListCreateView,
+    ProfileRetrieveUpdateDestroyView,
+    BankAccountListCreateView,
+    BankAccountRetrieveUpdateDestroyView,
+    SocialLinkListCreateView,
+    SocialLinkRetrieveUpdateDestroyView
+)
 
 app_name = 'accounts'
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
+    path('profiles/', ProfileListCreateView.as_view(), name='profile-list-create'),
+    path('profiles/<int:pk>/', ProfileRetrieveUpdateDestroyView.as_view(), name='profile-retrieve-update-destroy'),
+    path('bankaccounts/', BankAccountListCreateView.as_view(), name='bankaccount-list-create'),
+    path('bankaccounts/<int:pk>/', BankAccountRetrieveUpdateDestroyView.as_view(), name='bankaccount-retrieve-update-destroy'),
+    path('sociallinks/', SocialLinkListCreateView.as_view(), name='sociallink-list-create'),
+    path('sociallinks/<int:pk>/', SocialLinkRetrieveUpdateDestroyView.as_view(), name='sociallink-retrieve-update-destroy'),
 
     # path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     # path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
