@@ -46,8 +46,8 @@ def compress(image):
 
 
 class Product(models.Model):
-    product_vendor = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, verbose_name=_("Product Vendor"), blank=True, null=True,)
+    # product_vendor = models.ForeignKey(
+    #     Profile, on_delete=models.CASCADE, verbose_name=_("Product Vendor"), blank=True, null=True,)
     product_name = models.CharField(max_length=150, verbose_name=_("Name"))
     digital_file = models.FileField(
         upload_to='products/files/', verbose_name=_("Digital File"), blank=True, null=True, help_text=_("Please use our recommended allowed extension are zip , rar"), validators=[FileExtensionValidator(allowed_extensions=['zip', 'rar'])])

@@ -17,4 +17,4 @@ class VendorPaymentsAdmin(admin.ModelAdmin):
     list_per_page = 10
     search_fields = ("request_amount", )
 
-admin.site.register(VendorPayments,VendorPaymentsAdmin)
+# admin.site.register(VendorPayments,VendorPaymentsAdmin)

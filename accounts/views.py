@@ -513,7 +513,7 @@ class OfferProductView(APIView):
             "Status": "1",
             "message": "Success",
             "Data": serializer.data
-        })        
+        })     
         
 
 # class ProductDetailView(APIView):
@@ -942,17 +942,17 @@ class UpdateProfileView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            user_id = request.data.get('Userid')
-            name = request.data.get('Name')
-            phone = request.data.get('Phone')
-            user_type = request.data.get('Type')
-            gst = request.data.get('Gst')
-            shopname = request.data.get('Shopname')
-            logoimage = request.data.get('Logoimage')
-            company_name = request.data.get('Company name')
-            latitude = request.data.get('Latitude')
+            user_id = request.data.get('user_id')
+            name = request.data.get('name')
+            phone = request.data.get('phone')
+            user_type = request.data.get('type')
+            gst = request.data.get('gst')
+            shopname = request.data.get('shopname')
+            logoimage = request.data.get('logoimage')
+            company_name = request.data.get('company_name')
+            latitude = request.data.get('latitude')
             longitude = request.data.get('longitude')
-            password = request.data.get('Password')
+            password = request.data.get('password')
 
             if not user_id:
                 return Response({'Status': '0', 'message': 'User ID is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1000,6 +1000,13 @@ class UpdateProfileView(APIView):
 class ProfileListCreateView(generics.ListCreateAPIView):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
+#below code added ---------------------
+    def perform_create(self, serializer):
+        user = self.request.user
+        if user and not Profile.objects.filter(user=user).exists():
+            serializer.save(user=user)
+        else:
+            serializer.save()
 
 class ProfileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Profile.objects.all()

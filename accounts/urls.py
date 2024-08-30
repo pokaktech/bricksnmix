@@ -42,8 +42,8 @@ urlpatterns = [
     path('orders-ajax/', views.MyOrdersJsonListView.as_view(),
          name='orders-ajax'),
     # 
-    path('getCategories/', CategoryListView.as_view(), name='get-categories'),
-    path('addCategory/', CategoryCreateView.as_view(), name='add-category'),
+    path('get-categories/', CategoryListView.as_view(), name='get_categories'),
+    path('category/', CategoryCreateView.as_view(), name='add_category'),
 
     path('banners/', BannerListView.as_view(), name='get-banners'),
     path('addBrand/', AddBrandView.as_view(), name='add-brand'),

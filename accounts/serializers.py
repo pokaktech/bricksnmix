@@ -57,18 +57,17 @@ class BrandSerializer(serializers.ModelSerializer):
 
 
 class OfferProductSerializer(serializers.ModelSerializer):
-    id = serializers.CharField(source='pk')
-    Categoryid = serializers.CharField(source='category.id')
-    Productid = serializers.CharField(source='pk')
+    product_id = serializers.CharField(source='pk')
+    category = serializers.CharField(source='category.id')
     name = serializers.CharField()
-    Price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    Offerpercent = serializers.DecimalField(max_digits=5, decimal_places=2)
-    actualprice = serializers.DecimalField(max_digits=10, decimal_places=2)
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    offer_percent = serializers.DecimalField(max_digits=5, decimal_places=2)
+    actual_price = serializers.DecimalField(max_digits=10, decimal_places=2)
     image = serializers.ImageField()
 
     class Meta:
         model = Product
-        fields = ['id', 'Categoryid', 'Productid', 'name', 'Price', 'Offerpercent', 'actualprice', 'image']        
+        fields = ['product_id', 'category', 'name', 'price', 'offer_percent', 'actual_price', 'image']        
         
 
 
@@ -101,7 +100,7 @@ class ProductSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = ['id', 'category', 'name', 'price', 'offer_percent', 'actual_price', 'image', 'description', 'product_rating', 'stock','images']
+        fields = ['id', 'vendor', 'category', 'name', 'price', 'offer_percent', 'actual_price', 'image', 'description', 'product_rating', 'stock','images']
 
     def create(self, validated_data):
         images_data = self.context['request'].FILES.getlist('images')
@@ -158,7 +157,7 @@ class BankAccountSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = '__all__'
+        exclude = ['id']
 class SocialLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialLink

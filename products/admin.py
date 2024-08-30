@@ -49,7 +49,7 @@ class RatingAdmin(admin.ModelAdmin):
     list_per_page = 10
 
 
-admin.site.register(Product, ProductAdmin)
+# admin.site.register(Product, ProductAdmin)
 # admin.site.register(ProductImage)
-admin.site.register(ProductRating, RatingAdmin)
+# admin.site.register(ProductRating, RatingAdmin)
 # admin.site.register(ProductSize)

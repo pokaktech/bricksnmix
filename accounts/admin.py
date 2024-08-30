@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Profile,BankAccount ,SocialLink, Product, Category
+from .models import Profile,BankAccount ,SocialLink, Product, Category, Subcategory
 # Register your models here.
 
 class ProfileAdmin(admin.ModelAdmin):
@@ -45,7 +45,7 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ('product_rating',)
     fieldsets = (
         (None, {
-            'fields': ('name', 'category', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'image')
+            'fields': ('vendor','name', 'category', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'image')
         }),
         ('Additional Information', {
             'classes': ('collapse',),
@@ -57,3 +57,5 @@ admin.site.register(Profile,ProfileAdmin)
 admin.site.register(BankAccount,BankAccountAdmin)
 admin.site.register(SocialLink,SocialLinkAdmin)
 admin.site.register(Product, ProductAdmin)
+admin.site.register(Category)
+admin.site.register(Subcategory)

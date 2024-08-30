@@ -10,7 +10,7 @@ class Profile(models.Model):
     image = models.ImageField(
         upload_to='profile_pic/', blank=True, null=True, )
     user = models.OneToOneField(    
-        User, on_delete=models.CASCADE, blank=True, null=True, )
+        User, on_delete=models.CASCADE)
     display_name = models.CharField(max_length=100, blank=True, null=True, )
     bio = models.TextField(blank=True, null=True)
     mobile_number = models.CharField(max_length=100, blank=True, null=True, )
@@ -40,9 +40,9 @@ class Profile(models.Model):
     # blance = models.FloatField(default=0.00, blank=True, null=True)
     # requested = models.FloatField(default=0.00, blank=True, null=True)
     # date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    # date_update = models.DateTimeField(auto_now=True, blank=True, null=True)
-    # slug = models.SlugField(
-        # blank=True, null=True, allow_unicode=True, unique=True, verbose_name=_("Slugfiy"))
+    date_update = models.DateTimeField(auto_now=True, blank=True, null=True)
+    slug = models.SlugField(
+        blank=True, null=True, allow_unicode=True, unique=True, verbose_name=_("Slugfiy"))
 
     email = models.EmailField(max_length=254, blank=True, null=True)
     name = models.CharField(max_length=100, blank=True, null=True)
@@ -77,10 +77,10 @@ class Profile(models.Model):
             if qs_exists:
                 self.slug = create_shortcode(self)
 
-        if self.code is None or self.code == "":
-            # code = generate_ref_code()
-            # self.code = code
-            self.code = f'{self.user}'
+        # if self.code is None or self.code == "":
+        #     # code = generate_ref_code()
+        #     # self.code = code
+        #     self.code = f'{self.user}'
 
         # img = Image.open(self.image.path)
         # if img.width > 300 or img.height > 300:
@@ -91,10 +91,9 @@ class Profile(models.Model):
         super().save(*args, **kwargs)
 
 
-def create_profile(sender, **kwargs):
-    if kwargs['created']:
-        user_profile = Profile.objects.create(
-            user=kwargs['instance'], )
+def create_profile(sender, instance, created, **kwargs):
+    if created and instance:
+        Profile.objects.create(user=instance)
 
 
 post_save.connect(create_profile, sender=User)
@@ -158,6 +157,7 @@ class Brand(models.Model):
         return self.name    
 
 class Product(models.Model):
+    vendor = models.ForeignKey(Profile, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)

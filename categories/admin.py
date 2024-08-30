@@ -79,7 +79,7 @@ class SubCategoryAdmin(admin.ModelAdmin):
     search_fields = ('name', )
 
 
-admin.site.register(SuperCategory, SuperCategoryAdmin,)
-admin.site.register(MainCategory, MainCategoryAdmin)
-admin.site.register(SubCategory, SubCategoryAdmin)
-admin.site.register(MiniCategory)
+# admin.site.register(SuperCategory, SuperCategoryAdmin,)
+# admin.site.register(MainCategory, MainCategoryAdmin)
+# admin.site.register(SubCategory, SubCategoryAdmin)
+# admin.site.register(MiniCategory)
