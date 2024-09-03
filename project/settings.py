@@ -30,8 +30,11 @@ DEBUG = True
 # ALLOWED_HOSTS = [ "195.35.20.1",
 #                    "bricksnmix.com"]
 
-ALLOWED_HOSTS = ["*", "572d-156-209-45-224.ngrok.io",
-                 "www.572d-156-209-45-224.ngrok.io", "127.0.0.1", "127.0.0.1:8000"]
+# ALLOWED_HOSTS = ["*", "572d-156-209-45-224.ngrok.io",
+#                  "www.572d-156-209-45-224.ngrok.io", "127.0.0.1", "127.0.0.1:8000"]
+
+ALLOWED_HOSTS = ['mazwinb.ddns.net', '192.168.1.33', '5ed1-111-92-118-11.ngrok-free.app']
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -156,12 +159,12 @@ WSGI_APPLICATION = 'project.wsgi.application'
 #     }
 # }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
 # DATABASES = {
 #     'default': {

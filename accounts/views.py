@@ -33,11 +33,11 @@ from django.http.response import HttpResponse
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Category, Subcategory, RatingReview
-from .serializers import CategorySerializer,RatingReviewSerializer
+from .serializers import CategorySerializer,RatingReviewSerializer, DeliveryAddressSerializer
 from rest_framework import status
-from .models import Banner, Brand, Product, Productimg, Cart, CartItem
+from .models import Banner, Brand, Product, Productimg, Cart, CartItem, ProductImage
 from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer
 from django.shortcuts import get_object_or_404
 from .models import CustomerOrder, OrderItem
@@ -48,7 +48,7 @@ from .models import BankAccount
 from .serializers import BankAccountSerializer
 from rest_framework import generics
 from .models import BankAccount
-from .serializers import BankAccountSerializer, ProfileSerializer
+from .serializers import BankAccountSerializer, ProfileSerializer, SubcategorySerializer
 from .models import SocialLink
 from .serializers import SocialLinkSerializer
 
@@ -506,6 +506,7 @@ class TrendingBrandsView(APIView):
         , status=status.HTTP_200_OK)        
 
 class OfferProductView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request, format=None):
         products = Product.objects.filter(offer_percent__gt=0)
         serializer = OfferProductSerializer(products, many=True)
@@ -535,6 +536,10 @@ class OfferProductView(APIView):
 #         })        
 class ProductDetail(APIView):
     permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
     def get(self, request, product_id=None):
         try:
             if product_id is not None:
@@ -585,7 +590,15 @@ class CategoryListView(APIView):
             "Status": "1",
             "message": "Success",
             "Data": serializer.data
-        }, status=status.HTTP_200_OK)        
+        }, status=status.HTTP_200_OK)     
+
+class SubcategoryListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Subcategory.objects.all()
+    serializer_class = SubcategorySerializer
+
+class SubcategoryRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Subcategory.objects.all()
+    serializer_class = SubcategorySerializer   
         
         
 class ProductSearchView(APIView):
@@ -1025,3 +1038,55 @@ class SocialLinkListCreateView(generics.ListCreateAPIView):
 class SocialLinkRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SocialLink.objects.all()
     serializer_class = SocialLinkSerializer
+
+
+
+class GetOrderBySellerID(APIView):
+    def post(self, request):
+        seller_id = request.data.get('sellerid')
+        if not seller_id:
+            return Response({"Status": "0", "message": "Seller ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        seller = get_object_or_404(User, id=seller_id)
+        orders = CustomerOrder.objects.filter(user=seller)
+
+        order_data = []
+        for order in orders:
+            delivery_address = order.delivery_address
+            address_serializer = DeliveryAddressSerializer(delivery_address)
+
+            # Fetch related order items
+            order_items = OrderItem.objects.filter(order=order)
+            items_data = []
+            
+            for item in order_items:
+                # Adding detailed product and category information
+                item_data = {
+                    "id": item.id,
+                    "Categoryid": item.product.category.id if item.product.category else None,
+                    "Productid": item.product.id,
+                    "name": item.product.name,
+                    "Price": str(item.product.price),
+                    "Offerpercent": str(item.product.offer_percent),
+                    "Actualprice": str(item.product.actual_price),
+                    "Quantity": item.quantity,
+                    "Image": [{"image": img.image.url} for img in ProductImage.objects.filter(order_item=item)],
+                    "Description": item.product.description or ""
+                }
+                items_data.append(item_data)
+            
+            # Create a dictionary with all the needed order information
+            order_dict = {
+                "id": order.id,
+                "Total_price": str(order.total_price),
+                "Deliverycharge": str(order.delivery_charge),
+                "NetTotal": str(order.net_total),
+                "Delivery_status": order.status,
+                "payment_type": order.payment_type,
+                "Delivery_address": address_serializer.data,
+                "Data": items_data  # Attach the detailed items data here
+            }
+            
+            order_data.append(order_dict)
+
+        return Response({"Status": "1", "message": "Success", "Data": order_data}, status=status.HTTP_200_OK)

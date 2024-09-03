@@ -25,7 +25,7 @@ from .models import SocialLink
 class SubcategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Subcategory
-        fields = ['id', 'name', 'image']
+        fields = ['id', 'category', 'name', 'image']
 
 class CategorySerializer(serializers.ModelSerializer):
     subcategories = SubcategorySerializer(many=True, read_only=True)
