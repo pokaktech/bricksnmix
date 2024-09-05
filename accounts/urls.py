@@ -7,7 +7,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import CategoryListView,CategoryCreateView,RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -89,6 +89,7 @@ urlpatterns = [
     path('delete_from_wishlist/', DeleteFromWishlist.as_view(), name='delete_from_wishlist'),
     path('update_profile/', UpdateProfileView.as_view(), name='update_profile'),
     path('get-order-by-sellerid/', GetOrderBySellerID.as_view(), name='get_order_by_sellerid'),
+    path('trending-products/', TrendingProductAPIView.as_view(), name='trending-products'),
 ]
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

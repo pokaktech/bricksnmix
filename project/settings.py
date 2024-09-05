@@ -33,7 +33,7 @@ DEBUG = True
 # ALLOWED_HOSTS = ["*", "572d-156-209-45-224.ngrok.io",
 #                  "www.572d-156-209-45-224.ngrok.io", "127.0.0.1", "127.0.0.1:8000"]
 
-ALLOWED_HOSTS = ['mazwinb.ddns.net', '192.168.1.33', '5ed1-111-92-118-11.ngrok-free.app']
+ALLOWED_HOSTS = ['195.35.20.1', '192.168.1.33']
 
 # Application definition
 
@@ -130,9 +130,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
+    #  'DEFAULT_PERMISSION_CLASSES': [
+    #     'rest_framework.permissions.IsAuthenticated',
+    # ],
 }
 
 SIMPLE_JWT = {

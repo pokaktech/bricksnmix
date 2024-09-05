@@ -52,6 +52,10 @@ from .serializers import BankAccountSerializer, ProfileSerializer, SubcategorySe
 from .models import SocialLink
 from .serializers import SocialLinkSerializer
 
+from django.db.models.aggregates import Count
+from django.utils.timezone import now
+from datetime import timedelta
+
 
 class RegisterView(APIView):
     def post(self, request, *args, **kwargs):
@@ -1090,3 +1094,21 @@ class GetOrderBySellerID(APIView):
             order_data.append(order_dict)
 
         return Response({"Status": "1", "message": "Success", "Data": order_data}, status=status.HTTP_200_OK)
+    
+
+class TrendingProductAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        # Define the time range for "trending" (e.g., last 30 days)
+        last_30_days = now() - timedelta(days=30)
+        
+        # Annotate products with the count of how many times they appear in orders within the last 30 days
+        trending_products = Product.objects.filter(
+            orderitem__order__created_at__gte=last_30_days
+        ).annotate(
+            order_count=Count('orderitem')
+        ).order_by('-order_count')[:10]  # Get top 10 trending products
+        
+        # Serialize the trending products
+        serializer = ProductSerializer(trending_products, many=True)
+        
+        return Response({"Status": "1", "message": "Success", "Data": serializer.data}, status=status.HTTP_200_OK)
