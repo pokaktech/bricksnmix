@@ -33,7 +33,7 @@ DEBUG = True
 # ALLOWED_HOSTS = ["*", "572d-156-209-45-224.ngrok.io",
 #                  "www.572d-156-209-45-224.ngrok.io", "127.0.0.1", "127.0.0.1:8000"]
 
-ALLOWED_HOSTS = ['195.35.20.1', '192.168.1.33']
+ALLOWED_HOSTS = ['195.35.20.1', '192.168.1.37']
 
 # Application definition
 
@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'pages',
     'payments',
     'rest_framework',
+    'rest_framework.authtoken',
     # 'rest_framework_simplejwt',
     'djoser',
     'accounts',
@@ -128,18 +129,19 @@ TEMPLATES = [
 from datetime import timedelta
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ),
     #  'DEFAULT_PERMISSION_CLASSES': [
     #     'rest_framework.permissions.IsAuthenticated',
     # ],
 }
 
-SIMPLE_JWT = {
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-}
+# SIMPLE_JWT = {
+#     'AUTH_HEADER_TYPES': ('Bearer',),
+#     'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+#     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+# }
 
 
 WSGI_APPLICATION = 'project.wsgi.application'
@@ -221,6 +223,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static', 'site_static')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
+
+
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'

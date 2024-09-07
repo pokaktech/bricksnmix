@@ -37,7 +37,8 @@ urlpatterns = [
     path('', include('contact.urls', namespace='contact')),
     path('', include('pages.urls', namespace='pages')),
     path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
+    # path('auth/', include('djoser.urls.jwt')),
+    path('auth/', include('djoser.urls.authtoken')),
     # path('currencies/', include('currencies.urls')),
 
 ]

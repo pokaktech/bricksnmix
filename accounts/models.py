@@ -11,7 +11,7 @@ class Profile(models.Model):
         upload_to='profile_pic/', blank=True, null=True, )
     user = models.OneToOneField(    
         User, on_delete=models.CASCADE)
-    display_name = models.CharField(max_length=100, blank=True, null=True, )
+    # display_name = models.CharField(max_length=100, blank=True, null=True, )
     bio = models.TextField(blank=True, null=True)
     mobile_number = models.CharField(max_length=100, blank=True, null=True, )
     address = models.CharField(max_length=100, blank=True, null=True, )
@@ -21,12 +21,12 @@ class Profile(models.Model):
     state = models.CharField(max_length=100, blank=True, null=True, )
 
     customer = 'customer'
-    vendor = 'vendor'
+    seller = 'seller'
     account_select = [
         (customer, 'customer'),
-        (vendor, 'vendor'),
+        (seller, 'seller'),
     ]
-    status = models.CharField(
+    user_type = models.CharField(
         max_length=13,
         choices=account_select,
         default=customer,
@@ -44,10 +44,10 @@ class Profile(models.Model):
     slug = models.SlugField(
         blank=True, null=True, allow_unicode=True, unique=True, verbose_name=_("Slugfiy"))
 
-    email = models.EmailField(max_length=254, blank=True, null=True)
-    name = models.CharField(max_length=100, blank=True, null=True)
+    # email = models.EmailField(max_length=254, blank=True, null=True)
+    # name = models.CharField(max_length=100, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
-    type = models.CharField(max_length=10, choices=[('user', 'User'), ('seller', 'Seller')], blank=True, null=True)
+    # type = models.CharField(max_length=10, choices=[('user', 'User'), ('seller', 'Seller')], blank=True, null=True)
     gst = models.CharField(max_length=15, blank=True, null=True)
     shopname = models.CharField(max_length=100, blank=True, null=True)
     logoimage = models.ImageField(upload_to='logos/', blank=True, null=True)
@@ -157,7 +157,7 @@ class Brand(models.Model):
         return self.name    
 
 class Product(models.Model):
-    vendor = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    vendor = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -165,7 +165,8 @@ class Product(models.Model):
     actual_price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    product_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
+    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
+    product_rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
     stock = models.IntegerField(default=0)
     images = models.JSONField(blank=True,null=True)
     

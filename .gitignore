@@ -15,5 +15,5 @@ __pycache__/
 # Virtual environment
 venv/
 
-db.sqlite3/
+db.sqlite3
 

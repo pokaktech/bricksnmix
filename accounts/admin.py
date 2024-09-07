@@ -5,8 +5,8 @@ from .models import Profile,BankAccount ,SocialLink, Product, Category, Subcateg
 class ProfileAdmin(admin.ModelAdmin):
     #fields = ("","")
     # inlines = [ ]
-    list_display = ('id', 'user', 'phone', 'email', 'city',"country" , "company_name")
-    list_filter = ("status",)
+    list_display = ('id', 'user', 'phone', 'city',"country" , "company_name")
+    # list_filter = ("status",)
     # list_editable = ()
     list_display_links = ("id", 'user', )
     list_per_page = 10
@@ -45,7 +45,7 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ('product_rating',)
     fieldsets = (
         (None, {
-            'fields': ('vendor','name', 'category', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'image')
+            'fields': ('vendor','name', 'category','brand', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'image')
         }),
         ('Additional Information', {
             'classes': ('collapse',),

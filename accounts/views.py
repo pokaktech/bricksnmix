@@ -28,6 +28,8 @@ import mimetypes
 import os
 # Import HttpResponse module
 from django.http.response import HttpResponse
+from django.utils import timezone
+
 
 # Create your views here.
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -38,7 +40,7 @@ from .models import Category, Subcategory, RatingReview
 from .serializers import CategorySerializer,RatingReviewSerializer, DeliveryAddressSerializer
 from rest_framework import status
 from .models import Banner, Brand, Product, Productimg, Cart, CartItem, ProductImage
-from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer
+from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer, CustomerSignupSerializer, SellerSignupSerializer
 from django.shortcuts import get_object_or_404
 from .models import CustomerOrder, OrderItem
 from .serializers import CustomerOrderSerializer, OrderItemSerializer
@@ -55,6 +57,12 @@ from .serializers import SocialLinkSerializer
 from django.db.models.aggregates import Count
 from django.utils.timezone import now
 from datetime import timedelta
+from django.db.models import Sum
+
+
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
 
 
 class RegisterView(APIView):
@@ -540,6 +548,7 @@ class OfferProductView(APIView):
 #         })        
 class ProductDetail(APIView):
     permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
@@ -549,7 +558,7 @@ class ProductDetail(APIView):
             if product_id is not None:
                 product = Product.objects.get(id=product_id)
                 serializer = ProductSerializer(product)
-                return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data}, status=status.HTTP_200_OK)
+                return Response({'Status': '1', 'message': 'Success', 'Data': [serializer.data]}, status=status.HTTP_200_OK)
             else:
                 products = Product.objects.all()
                 serializer = ProductSerializer(products, many=True)
@@ -956,6 +965,7 @@ class DeleteFromWishlist(APIView):
 
 class UpdateProfileView(APIView):
     permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
 
     def post(self, request, *args, **kwargs):
         try:
@@ -1112,3 +1122,111 @@ class TrendingProductAPIView(APIView):
         serializer = ProductSerializer(trending_products, many=True)
         
         return Response({"Status": "1", "message": "Success", "Data": serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+
+class CustomAuthToken(ObtainAuthToken):
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        user_type = token.user.profile.user_type
+        print(user_type)
+        data = {"access": token.key, "user_type": user_type, "user_name": user.username, "email": user.email}
+        return Response({
+            "status": "1",
+            "message": "Success",
+            "Data": data
+            # 'access': token.key,
+            # 'user_type': user_type,
+            # 'user_name': user.username,
+            # 'email': user.email,
+            # 'phone_number':
+            # 'pin': get_pin(user),
+            # 'login_data': get_response(user)
+        })
+
+
+class LogoutView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        # Delete the token associated with the current user
+        Token.objects.filter(user=request.user).delete()
+        return Response({"detail": "Successfully logged out."})
+    
+
+
+class ProfileUpdateView(generics.UpdateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get_object(self):
+        # Fetch the profile of the currently logged-in user
+        return get_object_or_404(Profile, user=self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        # This method will return the profile of the currently logged-in user
+        profile = self.get_object()
+        serializer = ProfileSerializer(profile)
+        return Response({"Status": "1", "message": "Success", "Data": [serializer.data]}, status=status.HTTP_200_OK)
+
+    # def put(self, request, *args, **kwargs):
+    #     profile = self.get_object()
+    #     serializer = self.get_serializer(profile, data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     self.perform_update(serializer)
+    #     return Response(serializer.data)
+
+    def patch(self, request, *args, **kwargs):
+        profile = self.get_object()
+        serializer = self.get_serializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({"Status": "1", "message": "Success", "Data": [serializer.data]})
+
+    def perform_update(self, serializer):
+        # Custom logic (if needed) before saving
+        serializer.save()
+
+
+class CustomerSignupView(APIView):
+    def post(self, request):
+        serializer = CustomerSignupSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "User created successfully!"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class SellerSignupView(APIView):
+    def post(self, request):
+        serializer = SellerSignupSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Seller account created successfully!"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class FastMovingProductsAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        # Define a time range, e.g., past 30 days
+        days_range = 30
+        time_threshold = timezone.now() - timedelta(days=days_range)
+
+        # Annotate products with the sum of quantities sold in the given time range
+        fast_moving_products = Product.objects.filter(
+            orderitem__order__created_at__gte=time_threshold
+        ).annotate(
+            total_sales=Sum('orderitem__quantity')
+        ).order_by('-total_sales')[:10]  # Top 10 fast-moving products
+
+        # Serialize the products (assuming you have a ProductSerializer)
+        serializer = ProductSerializer(fast_moving_products, many=True)
+        return Response({"Status": "1", "message": "Success", "Data": [serializer.data]})

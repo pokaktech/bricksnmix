@@ -7,7 +7,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import CategoryListView,CategoryCreateView,RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -90,6 +90,12 @@ urlpatterns = [
     path('update_profile/', UpdateProfileView.as_view(), name='update_profile'),
     path('get-order-by-sellerid/', GetOrderBySellerID.as_view(), name='get_order_by_sellerid'),
     path('trending-products/', TrendingProductAPIView.as_view(), name='trending-products'),
+    path('api/v2/login/', CustomAuthToken.as_view()),
+    path('api/v2/logout/', LogoutView.as_view(), name='api_logout'),
+    path('v2/profile-update/', ProfileUpdateView.as_view(), name='profile-update'),
+    path('customer-signup/', CustomerSignupView.as_view(), name='customer-signup'),
+    path('seller-signup/', SellerSignupView.as_view(), name='seller-signup'),
+    path('fast-moving-products/', FastMovingProductsAPIView.as_view(), name='fast-moving-products'),
 ]
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

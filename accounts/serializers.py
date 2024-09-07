@@ -3,6 +3,8 @@ from .models import Category, Subcategory, Banner, Brand, Product, Productimg, R
 from django.contrib.auth.models import User
 from .models import BankAccount, Profile
 from .models import SocialLink
+from rest_framework.exceptions import ValidationError
+
 # class SubcategorySerializer(serializers.ModelSerializer):
 #     id = serializers.CharField(source='pk')
 #     subcategoryname = serializers.CharField(source='name')
@@ -100,7 +102,7 @@ class ProductSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = ['id', 'vendor', 'category', 'name', 'price', 'offer_percent', 'actual_price', 'image', 'description', 'product_rating', 'stock','images']
+        fields = ['id', 'vendor', 'category', 'brand', 'name', 'price', 'offer_percent', 'actual_price', 'image', 'description', 'product_rating', 'stock','images']
 
     def create(self, validated_data):
         images_data = self.context['request'].FILES.getlist('images')
@@ -157,8 +159,74 @@ class BankAccountSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        exclude = ['id']
+        exclude = ['id', 'user']
 class SocialLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialLink
         fields = '__all__'
+
+
+class CustomerSignupSerializer(serializers.ModelSerializer):
+    confirm_password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'confirm_password']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+
+    def validate(self, data):
+        if data['password'] != data['confirm_password']:
+            raise ValidationError("Passwords do not match")
+        return data
+
+    def create(self, validated_data):
+        # Remove confirm_password as it's not needed for creating the User
+        validated_data.pop('confirm_password')
+
+        # Create the user
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password']
+        )
+
+        # Automatically set the Profile's user_type to 'customer'
+        user.profile.user_type = Profile.customer
+        user.profile.save()
+
+        return user
+    
+
+class SellerSignupSerializer(serializers.ModelSerializer):
+    confirm_password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'confirm_password']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+
+    def validate(self, data):
+        if data['password'] != data['confirm_password']:
+            raise ValidationError("Passwords do not match")
+        return data
+
+    def create(self, validated_data):
+        # Remove confirm_password as it's not needed for creating the User
+        validated_data.pop('confirm_password')
+
+        # Create the user
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password']
+        )
+
+        # Automatically set the Profile's user_type to 'seller'
+        user.profile.user_type = Profile.seller
+        user.profile.save()
+
+        return user
