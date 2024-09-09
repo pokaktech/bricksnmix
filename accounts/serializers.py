@@ -59,8 +59,8 @@ class BrandSerializer(serializers.ModelSerializer):
 
 
 class OfferProductSerializer(serializers.ModelSerializer):
-    product_id = serializers.CharField(source='pk')
-    category = serializers.CharField(source='category.id')
+    product_id = serializers.IntegerField(source='pk')
+    category = serializers.IntegerField(source='category.id')
     name = serializers.CharField()
     price = serializers.DecimalField(max_digits=10, decimal_places=2)
     offer_percent = serializers.DecimalField(max_digits=5, decimal_places=2)
@@ -102,7 +102,8 @@ class ProductSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = ['id', 'vendor', 'category', 'brand', 'name', 'price', 'offer_percent', 'actual_price', 'image', 'description', 'product_rating', 'stock','images']
+        fields = ['id', 'vendor', 'category', 'brand', 'name', 'price', 'offer_percent', 'actual_price', 'image', 'description', 'stock','images']
+        read_only_fields = ['product_rating']
 
     def create(self, validated_data):
         images_data = self.context['request'].FILES.getlist('images')

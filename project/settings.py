@@ -84,7 +84,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.cache.FetchFromCacheMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -92,6 +94,12 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'allauth.account.middleware.AccountMiddleware', 
 ]
+
+# Configure how long pages should stay in the cache
+CACHE_MIDDLEWARE_SECONDS = 60 * 15  # Cache for 15 minutes
+
+# Optionally, set a cache key prefix to prevent conflicts
+CACHE_MIDDLEWARE_KEY_PREFIX = 'myproject'
 
 ROOT_URLCONF = 'project.urls'
 
@@ -128,6 +136,7 @@ TEMPLATES = [
 
 from datetime import timedelta
 REST_FRAMEWORK = {
+    'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # 'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',

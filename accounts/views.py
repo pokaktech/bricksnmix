@@ -567,7 +567,14 @@ class ProductDetail(APIView):
             return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request):
-        product_serializer = ProductSerializer(data=request.data,  context={'request': request})
+    # Extract vendor from the request
+        vendor = request.user  # Assuming the vendor is the logged-in user
+
+        # Create product data with the vendor set to the current user
+        product_data = request.data.copy()  # Make a copy of request.data
+        product_data['vendor'] = vendor.id  # Set vendor ID
+
+        product_serializer = ProductSerializer(data=product_data, context={'request': request})
         if product_serializer.is_valid():
             product = product_serializer.save()
             images_data = request.FILES.getlist('images')
@@ -576,6 +583,7 @@ class ProductDetail(APIView):
             return Response({"Status": "1", "message": "Product added successfully"}, status=status.HTTP_201_CREATED)
         else:
             return Response({"Status": "0", "message": "Failed to add product", "Errors": product_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
         
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -761,9 +769,39 @@ class RatingReviewDetail(APIView):
     
 class AddToCart(APIView):
     permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get(self, request):
+        user = request.user
+
+        try:
+            cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        cart_items = CartItem.objects.filter(cart=cart)
+
+        # Prepare the cart items data
+        items = []
+        for item in cart_items:
+            items.append({
+                'product_id': item.product.id,
+                'product_name': item.product.name,
+                'quantity': item.quantity,
+                'price_per_item': item.product.price,
+                'total_price': item.quantity * item.product.price
+            })
+
+        return Response({
+            'Status': '1',
+            'cart_id': cart.id,
+            'total_items': len(items),
+            'items': items,
+        }, status=status.HTTP_200_OK)  
+    
 
     def post(self, request):
-        product_id = request.data.get('productid')
+        product_id = request.data.get('product_id')
         quantity = request.data.get('quantity')
 
         # Debugging print statements
@@ -815,6 +853,7 @@ class AddToCart(APIView):
     
 class GetCart(APIView):
     permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
 
     def get(self, request):
         user = request.user
@@ -846,7 +885,7 @@ class GetCart(APIView):
 
 class UpdateCart(APIView):
     permission_classes = [IsAuthenticated]
-
+    authentication_classes = [TokenAuthentication]
     def post(self, request):
         cart_item_id = request.data.get('Cartid')
         quantity = request.data.get('quantity')
@@ -1229,4 +1268,4 @@ class FastMovingProductsAPIView(APIView):
 
         # Serialize the products (assuming you have a ProductSerializer)
         serializer = ProductSerializer(fast_moving_products, many=True)
-        return Response({"Status": "1", "message": "Success", "Data": [serializer.data]})
+        return Response({"Status": "1", "message": "Success", "Data": serializer.data})

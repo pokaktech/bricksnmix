@@ -60,7 +60,8 @@ urlpatterns = [
     path('reviews/', RatingReviewListCreate.as_view(), name='review_list_create'),
     path('reviews/<int:pk>/', RatingReviewDetail.as_view(), name='review_detail'),
     path('get_cart/', GetCart.as_view(), name='get_cart'),
-    path('add_to_cart/', AddToCart.as_view(), name='add_to_cart'),
+    # path('add_to_cart/', AddToCart.as_view(), name='add_to_cart'),
+    path('cart/', AddToCart.as_view(), name='add_to_cart'),
     path('update_cart/', UpdateCart.as_view(), name='update_cart'),
     
     
