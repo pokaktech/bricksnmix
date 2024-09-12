@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from orders.models import Order, OrderDetails
 from django.views.generic import View, TemplateView
+from rest_framework.exceptions import ValidationError
 from django.views.decorators.csrf import csrf_exempt
 from django.http import Http404 
 from django.utils.decorators import method_decorator
@@ -1170,7 +1171,14 @@ class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data,
                                            context={'request': request})
-        serializer.is_valid(raise_exception=True)
+        # serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError:
+            return Response({
+                "status": "0",
+                "message": "Invalid username or password"
+            }, status=status.HTTP_400_BAD_REQUEST)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
         user_type = token.user.profile.user_type

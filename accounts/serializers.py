@@ -59,7 +59,7 @@ class BrandSerializer(serializers.ModelSerializer):
 
 
 class OfferProductSerializer(serializers.ModelSerializer):
-    product_id = serializers.IntegerField(source='pk')
+    id = serializers.IntegerField(source='pk')
     category = serializers.IntegerField(source='category.id')
     name = serializers.CharField()
     price = serializers.DecimalField(max_digits=10, decimal_places=2)
@@ -69,7 +69,7 @@ class OfferProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['product_id', 'category', 'name', 'price', 'offer_percent', 'actual_price', 'image']        
+        fields = ['id', 'category', 'name', 'price', 'offer_percent', 'actual_price', 'image']        
         
 
 

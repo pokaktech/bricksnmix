@@ -1,7 +1,9 @@
 from django import template
 #from orders.views import Order, OrderDetails
-from orders.models import Order, OrderDetails
-from products.models import Product 
+# from orders.models import Order, OrderDetails
+from accounts.models import CustomerOrder, OrderItem
+# from products.models import Product 
+from accounts.models import Product
 from django.contrib.auth.models import User
 
 register = template.Library()
@@ -10,9 +12,9 @@ register = template.Library()
 @register.filter
 def cart_items_count(user):
     if user.is_authenticated and not user.is_anonymous:
-        if Order.objects.all().filter(user=user, is_finished=False):
-            order = Order.objects.get(user=user, is_finished=False)
-            return OrderDetails.objects.all().filter(order=order).count()
+        if CustomerOrder.objects.all().filter(user=user, is_finished=False):
+            order = CustomerOrder.objects.get(user=user, is_finished=False)
+            return OrderItem.objects.all().filter(order=order).count()
 
         else:
             return 0
@@ -22,8 +24,8 @@ def cart_items_count(user):
 @register.filter
 def underway_orders_count(user):
     if user.is_authenticated and not user.is_anonymous:
-        if Order.objects.all().filter(status="Underway"):
-            underway_orders = Order.objects.all().filter(status="Underway").count()
+        if CustomerOrder.objects.all().filter(status="Underway"):
+            underway_orders = CustomerOrder.objects.all().filter(status="Underway").count()
             return underway_orders
 
         else:
@@ -33,8 +35,8 @@ def underway_orders_count(user):
 @register.filter
 def all_orders_count(user):
     if user.is_authenticated and not user.is_anonymous:
-        if Order.objects.all():
-            all_order = Order.objects.all().count()
+        if CustomerOrder.objects.all():
+            all_order = CustomerOrder.objects.all().count()
             return all_order
 
         else:
