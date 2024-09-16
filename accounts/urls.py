@@ -6,8 +6,8 @@ from django.urls import reverse_lazy
 from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
-from .views import CategoryListView,CategoryCreateView,RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView
+from .views import RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -42,8 +42,10 @@ urlpatterns = [
     path('orders-ajax/', views.MyOrdersJsonListView.as_view(),
          name='orders-ajax'),
     # 
-    path('get-categories/', CategoryListView.as_view(), name='get_categories'),
-    path('category/', CategoryCreateView.as_view(), name='add_category'),
+    # path('get-categories/', CategoryListView.as_view(), name='get_categories'),
+    # path('category/', CategoryCreateView.as_view(), name='add_category'),
+    path('categories/', CategoryListCreateView.as_view(), name='category-list-create'),
+    path('categories/<int:category_id>/', CategoryRetrieveUpdateDestroyAPIView.as_view(), name='category-detail'),
 
     path('subcategories/', SubcategoryListCreateAPIView.as_view(), name='subcategory-list-create'),
     path('subcategories/<int:pk>/', SubcategoryRetrieveUpdateDestroyAPIView.as_view(), name='subcategory-detail'),
@@ -97,6 +99,9 @@ urlpatterns = [
     path('customer-signup/', CustomerSignupView.as_view(), name='customer-signup'),
     path('seller-signup/', SellerSignupView.as_view(), name='seller-signup'),
     path('fast-moving-products/', FastMovingProductsAPIView.as_view(), name='fast-moving-products'),
+    path('product/<int:product_id>/stock/', ProductStockView.as_view(), name='product-stock'),
+    path('product/', ProductView.as_view(), name='product'),
+    path('product/<int:product_id>/', ProductView.as_view(), name='product'),
 ]
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

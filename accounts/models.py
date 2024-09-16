@@ -158,17 +158,29 @@ class Brand(models.Model):
 
 class Product(models.Model):
     vendor = models.ForeignKey(User, on_delete=models.CASCADE)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True)
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.SET_NULL, blank=True, null=True)
     name = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    offer_percent = models.DecimalField(max_digits=5, decimal_places=2)
+    offer_percent = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     actual_price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    min_order_quantity = models.IntegerField(default=50)
+    delivery_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
     product_rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
     stock = models.IntegerField(default=0)
+    stock_status = models.BooleanField(default=False)
     images = models.JSONField(blank=True,null=True)
+
+    def save(self, *args, **kwargs):
+        # Automatically update stock_status based on stock value
+        if self.stock == 0:
+            self.stock_status = False
+        else:
+            self.stock_status = True
+        super(Product, self).save(*args, **kwargs)
     
     def __str__(self):
         return self.name    
