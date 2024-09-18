@@ -662,7 +662,7 @@ class CategoryRetrieveUpdateDestroyAPIView(APIView):
         return Response({
             "Status": "1",
             "message": "Success",
-            "Data": serializer.data
+            "Data": [serializer.data]
         }, status=status.HTTP_200_OK)
 
     def put(self, request, category_id, format=None):
@@ -911,146 +911,146 @@ class RatingReviewDetail(APIView):
 #         review.delete()
 #         return JsonResponse({"Status": "1", "message": "Success"}, status=200)    
     
-class AddToCart(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+# class CartView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [TokenAuthentication]
 
-    def get(self, request):
-        user = request.user
+#     def get(self, request):
+#         user = request.user
 
-        try:
-            cart = Cart.objects.get(user=user)
-        except Cart.DoesNotExist:
-            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
+#         try:
+#             cart = Cart.objects.get(user=user)
+#         except Cart.DoesNotExist:
+#             return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        cart_items = CartItem.objects.filter(cart=cart)
+#         cart_items = CartItem.objects.filter(cart=cart)
 
-        # Prepare the cart items data
-        items = []
-        for item in cart_items:
-            items.append({
-                'product_id': item.product.id,
-                'product_name': item.product.name,
-                'quantity': item.quantity,
-                'price_per_item': item.product.price,
-                'total_price': item.quantity * item.product.price
-            })
+#         # Prepare the cart items data
+#         items = []
+#         for item in cart_items:
+#             items.append({
+#                 'product_id': item.product.id,
+#                 'product_name': item.product.name,
+#                 'quantity': item.quantity,
+#                 'price_per_item': item.product.price,
+#                 'total_price': item.quantity * item.product.price
+#             })
 
-        return Response({
-            'Status': '1',
-            'cart_id': cart.id,
-            'total_items': len(items),
-            'items': items,
-        }, status=status.HTTP_200_OK)  
+#         return Response({
+#             'Status': '1',
+#             'cart_id': cart.id,
+#             'total_items': len(items),
+#             'items': items,
+#         }, status=status.HTTP_200_OK)  
     
 
-    def post(self, request):
-        product_id = request.data.get('product_id')
-        quantity = request.data.get('quantity')
+#     def post(self, request):
+#         product_id = request.data.get('product_id')
+#         quantity = request.data.get('quantity')
 
-        # Debugging print statements
-        print(f"Request data: Product ID = {product_id}, Quantity = {quantity}")
+#         # Debugging print statements
+#         print(f"Request data: Product ID = {product_id}, Quantity = {quantity}")
 
-        if not product_id or not quantity:
-            return Response({'Status': '0', 'message': 'Product ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
+#         if not product_id or not quantity:
+#             return Response({'Status': '0', 'message': 'Product ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = request.user
+#         user = request.user
 
-        # Debugging print statement
-        print(f"User ID: {user.id}")
+#         # Debugging print statement
+#         print(f"User ID: {user.id}")
 
-        try:
-            product = Product.objects.get(id=product_id)
-        except Product.DoesNotExist:
-            return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+#         try:
+#             product = Product.objects.get(id=product_id)
+#         except Product.DoesNotExist:
+#             return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Debugging print statement
-        print(f"Product ID: {product.id}, Stock: {product.stock}")
+#         # Debugging print statement
+#         print(f"Product ID: {product.id}, Stock: {product.stock}")
 
-        if product.stock < int(quantity):
-            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+#         if product.stock < int(quantity):
+#             return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
 
-        cart, created = Cart.objects.get_or_create(user=user)
-        # Debugging print statement
-        print(f"Cart ID: {cart.id}, Created: {created}")
+#         cart, created = Cart.objects.get_or_create(user=user)
+#         # Debugging print statement
+#         print(f"Cart ID: {cart.id}, Created: {created}")
 
-        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-        # Debugging print statement
-        print(f"Cart Item: {cart_item}, Created: {created}")
+#         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+#         # Debugging print statement
+#         print(f"Cart Item: {cart_item}, Created: {created}")
 
-        if created:
-            cart_item.quantity = int(quantity)
-        else:
-            if cart_item.quantity + int(quantity) > product.stock:
-                return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
-            cart_item.quantity += int(quantity)
+#         if created:
+#             cart_item.quantity = int(quantity)
+#         else:
+#             if cart_item.quantity + int(quantity) > product.stock:
+#                 return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+#             cart_item.quantity += int(quantity)
 
-        cart_item.save()
+#         cart_item.save()
 
-        # Update the product stock
-        product.stock -= int(quantity)
-        if product.stock < 0:
-            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
-        product.save()
+#         # Update the product stock
+#         product.stock -= int(quantity)
+#         if product.stock < 0:
+#             return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+#         product.save()
 
-        return Response({"Status": "1", "message": "Product added to cart successfully"}, status=status.HTTP_201_CREATED)
+#         return Response({"Status": "1", "message": "Product added to cart successfully"}, status=status.HTTP_201_CREATED)
     
-class GetCart(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+# class GetCart(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [TokenAuthentication]
 
-    def get(self, request):
-        user = request.user
+#     def get(self, request):
+#         user = request.user
 
-        try:
-            cart = Cart.objects.get(user=user)
-        except Cart.DoesNotExist:
-            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
+#         try:
+#             cart = Cart.objects.get(user=user)
+#         except Cart.DoesNotExist:
+#             return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        cart_items = CartItem.objects.filter(cart=cart)
+#         cart_items = CartItem.objects.filter(cart=cart)
 
-        # Prepare the cart items data
-        items = []
-        for item in cart_items:
-            items.append({
-                'product_id': item.product.id,
-                'product_name': item.product.name,
-                'quantity': item.quantity,
-                'price_per_item': item.product.price,
-                'total_price': item.quantity * item.product.price
-            })
+#         # Prepare the cart items data
+#         items = []
+#         for item in cart_items:
+#             items.append({
+#                 'product_id': item.product.id,
+#                 'product_name': item.product.name,
+#                 'quantity': item.quantity,
+#                 'price_per_item': item.product.price,
+#                 'total_price': item.quantity * item.product.price
+#             })
 
-        return Response({
-            'Status': '1',
-            'cart_id': cart.id,
-            'total_items': len(items),
-            'items': items,
-        }, status=status.HTTP_200_OK)        
+#         return Response({
+#             'Status': '1',
+#             'cart_id': cart.id,
+#             'total_items': len(items),
+#             'items': items,
+#         }, status=status.HTTP_200_OK)        
 
-class UpdateCart(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
-    def post(self, request):
-        cart_item_id = request.data.get('Cartid')
-        quantity = request.data.get('quantity')
+# class UpdateCart(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [TokenAuthentication]
+#     def post(self, request):
+#         cart_item_id = request.data.get('Cartid')
+#         quantity = request.data.get('quantity')
 
-        if not cart_item_id or not quantity:
-            return Response({'Status': '0', 'message': 'Cart ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
+#         if not cart_item_id or not quantity:
+#             return Response({'Status': '0', 'message': 'Cart ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            cart_item = CartItem.objects.get(id=cart_item_id)
-        except CartItem.DoesNotExist:
-            return Response({'Status': '0', 'message': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
+#         try:
+#             cart_item = CartItem.objects.get(id=cart_item_id)
+#         except CartItem.DoesNotExist:
+#             return Response({'Status': '0', 'message': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if cart_item.product.stock + cart_item.quantity < int(quantity):
-            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+#         if cart_item.product.stock + cart_item.quantity < int(quantity):
+#             return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
 
-        cart_item.product.stock += cart_item.quantity - int(quantity)
-        cart_item.product.save()
-        cart_item.quantity = int(quantity)
-        cart_item.save()
+#         cart_item.product.stock += cart_item.quantity - int(quantity)
+#         cart_item.product.save()
+#         cart_item.quantity = int(quantity)
+#         cart_item.save()
 
-        return Response({"Status": "1", "message": "Cart updated successfully"}, status=status.HTTP_200_OK)  
+#         return Response({"Status": "1", "message": "Cart updated successfully"}, status=status.HTTP_200_OK)  
 
 class PlaceOrderView(APIView):
     def post(self, request):
@@ -1568,6 +1568,152 @@ class ProductView(APIView):
             return Response({"Status": "1", "message": "Product deleted successfully"}, status=status.HTTP_200_OK)
         except Product.DoesNotExist:
             return Response({'Status': '0', 'message': 'Product not found or you do not own this product.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class CartView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get(self, request):
+        user = request.user
+
+        try:
+            cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        cart_items = CartItem.objects.filter(cart=cart)
+
+        # Prepare the cart items data
+        items = []
+        for item in cart_items:
+            items.append({
+                'product_id': item.product.id,
+                'product_name': item.product.name,
+                'quantity': item.quantity,
+                'price_per_item': item.product.price,
+                'total_price': item.quantity * item.product.price
+            })
+
+        return Response({
+            'Status': '1',
+            'cart_id': cart.id,
+            'total_items': len(items),
+            'items': items,
+        }, status=status.HTTP_200_OK)  
+    
+
+    def post(self, request):
+        product_id = request.data.get('product_id')
+
+        # Debugging print statements
+        print(f"Request data: Product ID = {product_id}")
+
+        if not product_id:
+            return Response({'Status': '0', 'message': 'Product ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+
+        # Debugging print statement
+        print(f"User ID: {user.id}")
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Debugging print statement
+        print(f"Product ID: {product.id}, Stock: {product.stock}")
+
+        # Use product's minimum order quantity as the default quantity
+        quantity = product.min_order_quantity
+
+        if product.stock < int(quantity):
+            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cart, created = Cart.objects.get_or_create(user=user)
+        # Debugging print statement
+        print(f"Cart ID: {cart.id}, Created: {created}")
+
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+        # Debugging print statement
+        print(f"Cart Item: {cart_item}, Created: {created}")
+
+        if created:
+            cart_item.quantity = int(quantity)
+        else:
+            if cart_item.quantity + int(quantity) > product.stock:
+                return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+            cart_item.quantity += int(quantity)
+
+        cart_item.save()
+
+        # Update the product stock
+        product.stock -= int(quantity)
+        if product.stock < 0:
+            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+        product.save()
+
+        return Response({"Status": "1", "message": "Product added to cart successfully"}, status=status.HTTP_201_CREATED)
+    
+
+class UpdateCart(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        quantity = request.data.get('quantity')
+
+        if not product_id or not quantity:
+            return Response({'Status': '0', 'message': 'Product ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        user = request.user
+        try:
+            cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            cart_item = CartItem.objects.get(cart=cart, product=product)
+        except CartItem.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if product.stock + cart_item.quantity < int(quantity):
+            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Adjust the stock
+        product.stock += cart_item.quantity - int(quantity)
+        product.save()
+
+        # Update the cart item quantity
+        cart_item.quantity = int(quantity)
+        cart_item.save()
+
+        if cart_item.quantity < product.min_order_quantity:
+            delivery_charge = product.delivery_charge
+            return Response({
+                "Status": "1",
+                "message": "Cart updated successfully",
+                "delivery_charge": delivery_charge,
+                "info": f"You need to pay a delivery charge of {delivery_charge} as the quantity is less than the minimum order quantity."
+            }, status=status.HTTP_200_OK)
+        
+        # If no delivery charge
+        return Response({
+            "Status": "1",
+            "message": "Cart updated successfully",
+            "delivery_charge": 0
+        }, status=status.HTTP_200_OK)
+
+
+
 
 
 

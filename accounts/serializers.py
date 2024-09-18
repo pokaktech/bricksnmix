@@ -107,6 +107,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         images_data = self.context['request'].FILES.getlist('images')
+        print(images_data)
         product = Product.objects.create(**validated_data)
         for image_data in images_data:
             Productimg.objects.create(product=product, image=image_data)

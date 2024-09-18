@@ -178,8 +178,8 @@ class Product(models.Model):
         # Automatically update stock_status based on stock value
         if self.stock == 0:
             self.stock_status = False
-        else:
-            self.stock_status = True
+        # else:
+        #     self.stock_status = True
         super(Product, self).save(*args, **kwargs)
     
     def __str__(self):

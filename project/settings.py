@@ -33,7 +33,7 @@ DEBUG = True
 # ALLOWED_HOSTS = ["*", "572d-156-209-45-224.ngrok.io",
 #                  "www.572d-156-209-45-224.ngrok.io", "127.0.0.1", "127.0.0.1:8000"]
 
-ALLOWED_HOSTS = ['195.35.20.1', '192.168.1.37']
+ALLOWED_HOSTS = ['195.35.20.1', '192.168.1.41']
 
 # Application definition
 

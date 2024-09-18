@@ -7,7 +7,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,AddToCart, UpdateCart,GetCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -61,9 +61,9 @@ urlpatterns = [
     path('getSearchedProducts/', ProductSearchView.as_view(), name='get-searched-products'),
     path('reviews/', RatingReviewListCreate.as_view(), name='review_list_create'),
     path('reviews/<int:pk>/', RatingReviewDetail.as_view(), name='review_detail'),
-    path('get_cart/', GetCart.as_view(), name='get_cart'),
+    # path('get_cart/', GetCart.as_view(), name='get_cart'),
     # path('add_to_cart/', AddToCart.as_view(), name='add_to_cart'),
-    path('cart/', AddToCart.as_view(), name='add_to_cart'),
+    path('cart/', CartView.as_view(), name='add_to_cart'),
     path('update_cart/', UpdateCart.as_view(), name='update_cart'),
     
     
