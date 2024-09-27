@@ -97,12 +97,12 @@ class ProductimgSerializer(serializers.ModelSerializer):
         fields = ['id','image']
 
 class ProductSerializer(serializers.ModelSerializer):
-    images = ProductimgSerializer(many=True, required=False)
-    image = serializers.ImageField(required=False)
+    product_images = ProductimgSerializer(many=True, required=False)
+    # image = serializers.ImageField(required=False)
     
     class Meta:
         model = Product
-        fields = ['id', 'vendor', 'category', 'subcategory', 'brand', 'name', 'price', 'offer_percent', 'actual_price', 'image', 'description', 'stock', 'stock_status', 'min_order_quantity', 'delivery_charge', 'images']
+        fields = ['id', 'vendor', 'category', 'subcategory', 'brand', 'name', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'stock_status', 'min_order_quantity', 'delivery_charge', 'product_images']
         read_only_fields = ['product_rating']
 
     def create(self, validated_data):
@@ -112,6 +112,19 @@ class ProductSerializer(serializers.ModelSerializer):
         for image_data in images_data:
             Productimg.objects.create(product=product, image=image_data)
         return product
+    
+    def update(self, instance, validated_data):
+        images_data = self.context['request'].FILES.getlist('images', [])
+        
+        # Update product fields
+        instance = super().update(instance, validated_data)
+        
+        # Handle updating or adding images
+        if images_data:
+            for image_data in images_data:
+                Productimg.objects.create(product=instance, image=image_data)
+        
+        return instance
     
 class RatingReviewSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')

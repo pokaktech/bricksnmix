@@ -1327,18 +1327,24 @@ class CustomAuthToken(ObtainAuthToken):
         user_type = token.user.profile.user_type
         print(user_type)
         data = {"access": token.key, "user_type": user_type, "user_name": user.username, "email": user.email}
-        return Response({
-            "status": "1",
-            "message": "Success",
-            "Data": data
-            # 'access': token.key,
-            # 'user_type': user_type,
-            # 'user_name': user.username,
-            # 'email': user.email,
-            # 'phone_number':
-            # 'pin': get_pin(user),
-            # 'login_data': get_response(user)
-        })
+        if user_type == "customer":
+            try:
+                cart = Cart.objects.get(user=user)
+                cart_items = CartItem.objects.filter(cart=cart).count()
+            except:
+                cart_items = 0
+            data = {"access": token.key, "user_type": user_type, "user_name": user.username, "email": user.email, "total_items": cart_items}
+            return Response({
+                "status": "1",
+                "message": "Success",
+                "Data": data
+            })
+        else:
+            return Response({
+                "status": "1",
+                "message": "Success",
+                "Data": data
+            })
 
 
 class LogoutView(APIView):
@@ -1514,9 +1520,9 @@ class ProductView(APIView):
         product_serializer = ProductSerializer(data=product_data, context={'request': request})
         if product_serializer.is_valid():
             product = product_serializer.save()
-            images_data = request.FILES.getlist('images')
-            for image_data in images_data:
-                Productimg.objects.create(product=product, image=image_data)
+            # images_data = request.FILES.getlist('images')
+            # for image_data in images_data:
+                # Productimg.objects.create(product=product, image=image_data)
             # Return full product data after creation
             response_serializer = ProductSerializer(product)
             return Response({
@@ -1541,7 +1547,7 @@ class ProductView(APIView):
             return Response({'Status': '0', 'message': 'Product not found or you do not own this product.'}, status=status.HTTP_404_NOT_FOUND)
 
         # Partial update: only update the fields provided in the request
-        product_serializer = ProductSerializer(product, data=request.data, partial=True)
+        product_serializer = ProductSerializer(product, data=request.data, partial=True, context={'request': request})
         if product_serializer.is_valid():
             product_serializer.save()
             # Return full product data after update
@@ -1588,9 +1594,12 @@ class CartView(APIView):
         # Prepare the cart items data
         items = []
         for item in cart_items:
+            product_images = Productimg.objects.filter(product=item.product).values_list('image', flat=True)  # Get all product images
+            product_image = product_images[0] if product_images else None  # Choose the first image or None if no image
             items.append({
                 'product_id': item.product.id,
                 'product_name': item.product.name,
+                'product_images': product_image,
                 'quantity': item.quantity,
                 'price_per_item': item.product.price,
                 'total_price': item.quantity * item.product.price
@@ -1657,6 +1666,29 @@ class CartView(APIView):
 
         return Response({"Status": "1", "message": "Product added to cart successfully"}, status=status.HTTP_201_CREATED)
     
+    def delete(self, request):
+        product_id = request.data.get('product_id')
+        
+        if not product_id:
+            return Response({'Status': '0', 'message': 'Product ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+
+        try:
+            cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
+        except CartItem.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # If found, delete the cart item
+        cart_item.delete()
+
+        return Response({"Status": "1", "message": "Item removed from cart successfully"}, status=status.HTTP_200_OK)
+    
 
 class UpdateCart(APIView):
     permission_classes = [IsAuthenticated]
@@ -1709,7 +1741,7 @@ class UpdateCart(APIView):
         return Response({
             "Status": "1",
             "message": "Cart updated successfully",
-            "delivery_charge": 0
+            "delivery_charge": 0.0
         }, status=status.HTTP_200_OK)
 
 

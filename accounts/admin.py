@@ -5,7 +5,7 @@ from .models import Profile,BankAccount ,SocialLink, Product, Category, Subcateg
 class ProfileAdmin(admin.ModelAdmin):
     #fields = ("","")
     # inlines = [ ]
-    list_display = ('id', 'user', 'phone', 'city',"country" , "company_name")
+    list_display = ('id', 'user', 'phone', 'city', "country", "user_type", "company_name")
     # list_filter = ("status",)
     # list_editable = ()
     list_display_links = ("id", 'user', )
