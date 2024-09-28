@@ -149,7 +149,7 @@ class CartSerializer(serializers.ModelSerializer):
 class DeliveryAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryAddress
-        fields = ['id', 'name', 'mobile', 'housename', 'place', 'district', 'country', 'latitude', 'longitude']
+        fields = ['id', 'name', 'mobile', 'housename', 'place', 'district', 'city', 'landmark', 'pincode', 'country', 'latitude', 'longitude']
 
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
