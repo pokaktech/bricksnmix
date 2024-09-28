@@ -33,6 +33,8 @@ from django.utils import timezone
 
 
 # Create your views here.
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -1745,7 +1747,33 @@ class UpdateCart(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class DeliveryAddressListCreateView(ListCreateAPIView):
+    serializer_class = DeliveryAddressSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    def get_queryset(self):
+        # Get only the delivery addresses of the authenticated user
+        return DeliveryAddress.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        # Set the user of the delivery address to the authenticated user
+        serializer.save(user=self.request.user)
 
 
+class DeliveryAddressDetailView(RetrieveUpdateDestroyAPIView):
+    serializer_class = DeliveryAddressSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get_queryset(self):
+        # Ensure that users can only interact with their own addresses
+        return DeliveryAddress.objects.filter(user=self.request.user)
+
+    def get_object(self):
+        # Retrieve the address and check if it belongs to the current user
+        obj = super().get_object()
+        if obj.user != self.request.user:
+            raise PermissionDenied("You do not have permission to access this address.")
+        return obj
 
 
