@@ -65,11 +65,10 @@ class OfferProductSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(max_digits=10, decimal_places=2)
     offer_percent = serializers.DecimalField(max_digits=5, decimal_places=2)
     actual_price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    image = serializers.ImageField()
 
     class Meta:
         model = Product
-        fields = ['id', 'category', 'name', 'price', 'offer_percent', 'actual_price', 'image']        
+        fields = ['id', 'category', 'name', 'price', 'offer_percent', 'actual_price']        
         
 
 
@@ -149,7 +148,7 @@ class CartSerializer(serializers.ModelSerializer):
 class DeliveryAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryAddress
-        fields = ['id', 'name', 'mobile', 'housename', 'place', 'district', 'city', 'landmark', 'pincode', 'country', 'latitude', 'longitude']
+        fields = ['id', 'name', 'mobile', 'housename', 'city', 'landmark', 'pincode']
 
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:

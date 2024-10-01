@@ -45,11 +45,11 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ('product_rating',)
     fieldsets = (
         (None, {
-            'fields': ('vendor','name', 'category','subcategory', 'brand', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'stock_status', 'min_order_quantity', 'delivery_charge', 'image')
+            'fields': ('vendor','name', 'category','subcategory', 'brand', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'stock_status', 'min_order_quantity', 'delivery_charge')
         }),
         ('Additional Information', {
             'classes': ('collapse',),
-            'fields': ('product_rating', 'images'),
+            'fields': ('product_rating', ),
         }),
     )
 

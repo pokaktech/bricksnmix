@@ -223,16 +223,16 @@ class RatingReview(models.Model):
 class DeliveryAddress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    mobile = models.IntegerField(default=0)
+    mobile = models.CharField(max_length=25)
     housename = models.CharField(max_length=255)
-    place = models.CharField(max_length=255)
-    district = models.CharField(max_length=100)
-    country = models.CharField(max_length=100)
+    # place = models.CharField(max_length=255)
+    state = models.CharField(max_length=100)
+    # country = models.CharField(max_length=100)
     pincode = models.IntegerField(default=0)
-    city = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100)
     landmark = models.CharField(max_length=100, blank=True, null=True)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    # latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    # longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} - {self.mobile}"

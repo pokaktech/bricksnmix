@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     # 'rest_framework_simplejwt',
     'djoser',
     'accounts',
+    'corsheaders',
     # 'django.contrib.gis',
 ]
 
@@ -88,12 +89,21 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     # 'django.middleware.cache.FetchFromCacheMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'allauth.account.middleware.AccountMiddleware', 
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+]
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 # Configure how long pages should stay in the cache
 # CACHE_MIDDLEWARE_SECONDS = 60 * 15  # Cache for 15 minutes

@@ -523,8 +523,8 @@ class TrendingBrandsView(APIView):
 class OfferProductView(APIView):
     permission_classes = [AllowAny]
     def get(self, request, format=None):
-        products = Product.objects.filter(offer_percent__gt=0)
-        serializer = OfferProductSerializer(products, many=True)
+        products = Product.objects.filter(offer_percent__gt=0, stock__gt=0)
+        serializer = ProductSerializer(products, many=True)
         return Response({
             "Status": "1",
             "message": "Success",
@@ -563,7 +563,7 @@ class ProductDetail(APIView):
                 serializer = ProductSerializer(product)
                 return Response({'Status': '1', 'message': 'Success', 'Data': [serializer.data]}, status=status.HTTP_200_OK)
             else:
-                products = Product.objects.all()
+                products = Product.objects.filter(stock__gt=0)
                 serializer = ProductSerializer(products, many=True)
                 return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data}, status=status.HTTP_200_OK)
         except Product.DoesNotExist:
@@ -1298,7 +1298,7 @@ class TrendingProductAPIView(APIView):
         
         # Annotate products with the count of how many times they appear in orders within the last 30 days
         trending_products = Product.objects.filter(
-            orderitem__order__created_at__gte=last_30_days
+            orderitem__order__created_at__gte=last_30_days, stock__gt=0
         ).annotate(
             order_count=Count('orderitem')
         ).order_by('-order_count')[:10]  # Get top 10 trending products
@@ -1420,7 +1420,7 @@ class FastMovingProductsAPIView(APIView):
 
         # Annotate products with the sum of quantities sold in the given time range
         fast_moving_products = Product.objects.filter(
-            orderitem__order__created_at__gte=time_threshold
+            orderitem__order__created_at__gte=time_threshold, stock__gt=0
         ).annotate(
             total_sales=Sum('orderitem__quantity')
         ).order_by('-total_sales')[:10]  # Top 10 fast-moving products
@@ -1638,7 +1638,7 @@ class CartView(APIView):
         print(f"Product ID: {product.id}, Stock: {product.stock}")
 
         # Use product's minimum order quantity as the default quantity
-        quantity = product.min_order_quantity
+        quantity = 1
 
         if product.stock < int(quantity):
             return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
