@@ -148,7 +148,7 @@ class CartSerializer(serializers.ModelSerializer):
 class DeliveryAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryAddress
-        fields = ['id', 'name', 'mobile', 'housename', 'city', 'landmark', 'pincode']
+        fields = ['id', 'name', 'mobile', 'housename', 'state', 'city', 'landmark', 'pincode']
 
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -165,7 +165,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class CustomerOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerOrder
-        fields = ['id', 'user', 'status', 'total_price', 'delivery_charge', 'net_total', 'payment_type', 'delivery_address', 'created_at', 'updated_at']
+        fields = ['id', 'status', 'total_price', 'delivery_charge', 'net_total', 'payment_type', 'delivery_address', 'created_at', 'updated_at']
 class BankAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankAccount
