@@ -1766,13 +1766,19 @@ class DeliveryAddressListCreateView(ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            self.perform_create(serializer)
+            delivery_address = serializer.save(user=self.request.user)
+            profile = Profile.objects.get(user=self.request.user)
+            if profile.default_address is None:
+                # If no default address, set this new address as the default
+                profile.default_address = delivery_address
+                profile.save()
+            # self.perform_create(serializer)
             return Response({"Status": "1", "message": "Address added successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response({"Status": "0", "message": "Failed to add address", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-    def perform_create(self, serializer):
-        # Set the user of the delivery address to the authenticated user
-        serializer.save(user=self.request.user)
+    # def perform_create(self, serializer):
+    #     # Set the user of the delivery address to the authenticated user
+    #     serializer.save(user=self.request.user)
 
 
 
@@ -1783,7 +1789,7 @@ class DeliveryAddressDetailView(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         # Ensure that users can only interact with their own addresses
-        return DeliveryAddress.objects.filter(user=self.request.user)
+        return DeliveryAddress.objects.filter(user=self.request.user).order_by('-is_default', '-id')
 
     def get_object(self):
         # Retrieve the address and check if it belongs to the current user
@@ -1815,49 +1821,49 @@ class DeliveryAddressDetailView(RetrieveUpdateDestroyAPIView):
         instance.delete()
 
 
-class PlaceOrderView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
-    def post(self, request):
-        serializer = CustomerOrderSerializer(data=request.data)
-        if serializer.is_valid():
-            order = serializer.save(user=request.user)
+# class PlaceOrderView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [TokenAuthentication]
+#     def post(self, request):
+#         serializer = CustomerOrderSerializer(data=request.data)
+#         if serializer.is_valid():
+#             order = serializer.save(user=request.user)
             
-            # Handle multiple products from cart or single product
-            if 'cart_items' in request.data:
-                # If called from the cart, process all cart items
-                for item_data in request.data.get('cart_items', []):
-                    item_data['order'] = order.id
-                    item_serializer = OrderItemSerializer(data=item_data)
-                    if item_serializer.is_valid():
-                        item_serializer.save()
-            else:
-                # Single product "Buy Now" scenario
-                product_id = request.data.get('product_id')
-                quantity = request.data.get('quantity')
+#             # Handle multiple products from cart or single product
+#             if 'cart_items' in request.data:
+#                 # If called from the cart, process all cart items
+#                 for item_data in request.data.get('cart_items', []):
+#                     item_data['order'] = order.id
+#                     item_serializer = OrderItemSerializer(data=item_data)
+#                     if item_serializer.is_valid():
+#                         item_serializer.save()
+#             else:
+#                 # Single product "Buy Now" scenario
+#                 product_id = request.data.get('product_id')
+#                 quantity = request.data.get('quantity')
 
-                try:
-                    product = Product.objects.get(id=product_id)
-                except Product.DoesNotExist:
-                    return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+#                 try:
+#                     product = Product.objects.get(id=product_id)
+#                 except Product.DoesNotExist:
+#                     return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
                 
-                # Use min_order_quantity if quantity is not provided
-                if not quantity:
-                    quantity = product.min_order_quantity
+#                 # Use min_order_quantity if quantity is not provided
+#                 if not quantity:
+#                     quantity = product.min_order_quantity
 
-                item_data = {
-                    'order': order.id,
-                    'product': product_id,
-                    'quantity': quantity,
-                    'price': product.price,
-                }
-                item_serializer = OrderItemSerializer(data=item_data)
-                if item_serializer.is_valid():
-                    item_serializer.save()
+#                 item_data = {
+#                     'order': order.id,
+#                     'product': product_id,
+#                     'quantity': quantity,
+#                     'price': product.price,
+#                 }
+#                 item_serializer = OrderItemSerializer(data=item_data)
+#                 if item_serializer.is_valid():
+#                     item_serializer.save()
             
-            return Response({"Status": "1", "message": "Success"}, status=status.HTTP_201_CREATED)
+#             return Response({"Status": "1", "message": "Success"}, status=status.HTTP_201_CREATED)
 
-        return Response({"Status": "0", "message": "Failed", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+#         return Response({"Status": "0", "message": "Failed", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DefaultDeliveryAddressView(APIView):
@@ -1868,11 +1874,21 @@ class DefaultDeliveryAddressView(APIView):
     def get(self, request):
         user = request.user
         try:
-            default_address = DeliveryAddress.objects.get(user=user, is_default=True)
-            delivery_address_serializer = DeliveryAddressSerializer(default_address)
-            return Response({"Status": "1", "message": "Success", "data": [delivery_address_serializer.data]}, status=status.HTTP_200_OK)
+            profile = Profile.objects.get(user=user)
+            try:
+                default_address = profile.default_address
+                print("sss",default_address)
+            except:
+                return Response({"Status": "0", "message": "No default address found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # default_address = DeliveryAddress.objects.get(user=user, is_default=True)
+            if default_address != None:
+                delivery_address_serializer = DeliveryAddressSerializer(default_address)
+                return Response({"Status": "1", "message": "Success", "data": [delivery_address_serializer.data]}, status=status.HTTP_200_OK)
+            else:
+                return Response({"Status": "0", "message": "No default address found"}, status=status.HTTP_404_NOT_FOUND)
         except DeliveryAddress.DoesNotExist:
-            return Response({"Status": "0", "message": "No default address found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"Status": "0", "message": "No user found"}, status=status.HTTP_404_NOT_FOUND)
 
     # POST method to set a new default address
     def post(self, request):
@@ -1880,20 +1896,61 @@ class DefaultDeliveryAddressView(APIView):
         new_default_address_id = request.data.get('default_address')  # Get the ID of the new default address
 
         # Unmark the current default address
-        try:
-            DeliveryAddress.objects.filter(user=user, is_default=True).update(is_default=False)
-        except DeliveryAddress.DoesNotExist:
-            return Response({"Status": "0", "message": "No default address found to unmark"}, status=status.HTTP_404_NOT_FOUND)
+        # try:
+        #     DeliveryAddress.objects.filter(user=user, is_default=True).update(is_default=False)
+        # except DeliveryAddress.DoesNotExist:
+        #     return Response({"Status": "0", "message": "No default address found to unmark"}, status=status.HTTP_404_NOT_FOUND)
 
         # Mark the new address as default
         try:
             new_default_address = DeliveryAddress.objects.get(id=new_default_address_id, user=user)  # Fetch the new default address
-            new_default_address.is_default = True
-            new_default_address.save()
+            # new_default_address.is_default = True
+            # new_default_address.save()
         except DeliveryAddress.DoesNotExist:
             return Response({"Status": "0", "message": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        profile = Profile.objects.get(user=user)
+        profile.default_address = new_default_address
+        profile.save()
         delivery_address_serializer = DeliveryAddressSerializer(new_default_address)
         return Response({"Status": "1", "message": "Default address updated successfully", "data": delivery_address_serializer.data}, status=status.HTTP_200_OK)
 
     
+
+class Checkout(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    def get(self, request):
+        user = request.user
+
+        user = request.user
+
+        try:
+            cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
+            return Response({'Status': '0', 'message': 'No items in the cart'}, status=status.HTTP_404_NOT_FOUND)
+
+        cart_items = CartItem.objects.filter(cart=cart)
+        data = []
+        total_delivery_charge = []
+        total_price = []
+        actual_price = []
+        offer_price = []
+        for item in cart_items:
+            product_images = Productimg.objects.filter(product=item.product).values_list('image', flat=True)  # Get all product images
+            product_image = product_images[0] if product_images else None
+            total_delivery_charge.append(item.product.delivery_charge if item.quantity < item.product.min_order_quantity else 0)
+            total_price.append(item.product.price * item.quantity)
+            actual_price.append(item.product.actual_price * item.quantity)
+            offer_price.append(item.product.price * item.quantity)
+            data.append({
+                "id": item.product.id,
+                "name": item.product.name,
+                "price": item.product.price,
+                'product_images': product_image,
+                'quantity': item.quantity,
+                "offer_percent": item.product.offer_percent,
+                "actual_price": item.product.actual_price,
+                "delivery_charge": item.product.delivery_charge
+            })
+        return Response({"Status": "1", "message": "Success", "Data": data, "delivery_charge": sum(total_delivery_charge), "actual_prices": sum(actual_price), "offer_price": sum(offer_price), "total_price": sum(total_price) + sum(total_delivery_charge)}, status=status.HTTP_200_OK)
