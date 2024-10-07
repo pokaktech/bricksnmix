@@ -42,7 +42,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Category, Subcategory, RatingReview
 from .serializers import CategorySerializer,RatingReviewSerializer, DeliveryAddressSerializer
 from rest_framework import status
-from .models import Banner, Brand, Product, Productimg, Cart, CartItem, ProductImage
+from .models import Banner, Brand, Product, Productimg, Cart, CartItem, OrderProductImage
 from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer, CustomerSignupSerializer, SellerSignupSerializer
 from django.shortcuts import get_object_or_404
 from .models import CustomerOrder, OrderItem
@@ -55,6 +55,8 @@ from rest_framework import generics
 from .models import BankAccount
 from .serializers import BankAccountSerializer, ProfileSerializer, SubcategorySerializer
 from .models import SocialLink
+from django.utils.crypto import get_random_string
+
 from .serializers import SocialLinkSerializer
 
 from django.db.models.aggregates import Count
@@ -1269,7 +1271,7 @@ class GetOrderBySellerID(APIView):
                     "Offerpercent": str(item.product.offer_percent),
                     "Actualprice": str(item.product.actual_price),
                     "Quantity": item.quantity,
-                    "Image": [{"image": img.image.url} for img in ProductImage.objects.filter(order_item=item)],
+                    "Image": [{"image": img.image.url} for img in OrderProductImage.objects.filter(order_item=item)],
                     "Description": item.product.description or ""
                 }
                 items_data.append(item_data)
@@ -1754,9 +1756,24 @@ class DeliveryAddressListCreateView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
 
+    # def get_queryset(self):
+    #     # Get only the delivery addresses of the authenticated user
+    #     return DeliveryAddress.objects.filter(user=self.request.user)
+
     def get_queryset(self):
         # Get only the delivery addresses of the authenticated user
-        return DeliveryAddress.objects.filter(user=self.request.user)
+        user = self.request.user
+        profile = Profile.objects.get(user=user)
+        
+        # Get the default address and remaining addresses
+        default_address = profile.default_address
+        addresses = DeliveryAddress.objects.filter(user=user).exclude(id=default_address.id if default_address else None)
+        print(addresses)
+        if default_address:
+            print("kokpo")
+            return DeliveryAddress.objects.filter(id=default_address.id).union(addresses)
+        else:
+            return addresses
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -1954,3 +1971,95 @@ class Checkout(APIView):
                 "delivery_charge": item.product.delivery_charge
             })
         return Response({"Status": "1", "message": "Success", "Data": data, "delivery_charge": sum(total_delivery_charge), "actual_prices": sum(actual_price), "offer_price": sum(offer_price), "total_price": sum(total_price) + sum(total_delivery_charge)}, status=status.HTTP_200_OK)
+    
+
+
+
+def get_cart_item(request):
+        user = request.user
+
+        user = request.user
+
+        try:
+            cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
+            return Response({'Status': '0', 'message': 'No items in the cart'}, status=status.HTTP_404_NOT_FOUND)
+
+        cart_items = CartItem.objects.filter(cart=cart)
+        data = []
+        total_delivery_charge = []
+        total_price = []
+        actual_price = []
+        offer_price = []
+        for item in cart_items:
+            product_images = Productimg.objects.filter(product=item.product).values_list('image', flat=True)  # Get all product images
+            product_image = product_images[0] if product_images else None
+            total_delivery_charge.append(item.product.delivery_charge if item.quantity < item.product.min_order_quantity else 0)
+            total_price.append(item.product.price * item.quantity)
+            actual_price.append(item.product.actual_price * item.quantity)
+            offer_price.append(item.product.price * item.quantity)
+            data.append({
+                "id": item.product.id,
+                "name": item.product.name,
+                "price": item.product.price,
+                'product_images': product_image,
+                'quantity': item.quantity,
+                "offer_percent": item.product.offer_percent,
+                "actual_price": item.product.actual_price,
+                "delivery_charge": item.product.delivery_charge
+            })
+        return {"delivery_charge": sum(total_delivery_charge), "actual_prices": sum(actual_price), "offer_price": sum(offer_price), "total_price": sum(total_price) + sum(total_delivery_charge)}
+
+
+
+
+class PlaceOrderView(APIView):
+    def post(self, request, format=None):
+        user = request.user  # Assuming the user is authenticated
+
+        full_cart = get_cart_item(request)
+        print("dsdsd", full_cart['delivery_charge'])
+        profile = Profile.objects.get(user=user)
+        delivery_address = profile.default_address
+
+        cart = Cart.objects.get(user=user)
+        cart_items = CartItem.objects.filter(cart=cart)
+        
+        # Generate a unique order number
+        order_number = get_random_string(length=15)
+
+        # Creating the order
+        order = CustomerOrder.objects.create(
+            user=user,
+            status='1',  # Ordered
+            total_price= full_cart['offer_price'],  # Set any dummy price or calculate from cart
+            delivery_charge= full_cart['delivery_charge'],  # Dummy delivery charge
+            net_total= full_cart['total_price'],  # Total price + delivery charge
+            payment_type='COD',  # Dummy payment type
+            order_number=order_number,
+            delivery_address=delivery_address,
+            payment_status='Pending'
+        )
+
+        # Create Order Items with images
+        products = Product.objects.all()  # Fetch some products (you can change logic here)
+        
+        for item in cart_items:
+            # quantity = item.quantity  # Example quantity
+            order_item = OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                price=item.product.price,  # Use product price or custom price
+            )
+
+            # Example logic to associate images (you can modify this as needed)
+            for img in item.product.product_images.all():  # Assuming you have a related_name 'images' in the Product model
+                OrderProductImage.objects.create(
+                    order_item=order_item,
+                    image=img.image  # Use the image from the product's images
+                )
+
+        # Serialize and return the order
+        serializer = CustomerOrderSerializer(order)
+        return Response({"Status": "1", "message": "Success", "Data": serializer.data}, status=status.HTTP_201_CREATED)

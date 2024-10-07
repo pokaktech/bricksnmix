@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Subcategory, Banner, Brand, Product, Productimg, RatingReview,Cart, CartItem, CustomerOrder, OrderItem, DeliveryAddress, ProductImage
+from .models import Category, Subcategory, Banner, Brand, Product, Productimg, RatingReview,Cart, CartItem, CustomerOrder, OrderItem, DeliveryAddress, OrderProductImage
 from django.contrib.auth.models import User
 from .models import BankAccount, Profile
 from .models import SocialLink
@@ -150,22 +150,38 @@ class DeliveryAddressSerializer(serializers.ModelSerializer):
         model = DeliveryAddress
         fields = ['id', 'name', 'mobile', 'housename', 'state', 'city', 'landmark', 'pincode']
 
-class ProductImageSerializer(serializers.ModelSerializer):
+class OrderProductImageSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProductImage
+        model = OrderProductImage
         fields = ['image']
 
-class OrderItemSerializer(serializers.ModelSerializer):
-    images = ProductImageSerializer(many=True, read_only=True)
+# class OrderItemSerializer(serializers.ModelSerializer):
+#     images = ProductImageSerializer(many=True, read_only=True)
     
+#     class Meta:
+#         model = OrderItem
+#         fields = ['id', 'order', 'product', 'quantity', 'price', 'images']
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    images = OrderProductImageSerializer(many=True, read_only=True)
     class Meta:
         model = OrderItem
-        fields = ['id', 'order', 'product', 'quantity', 'price', 'images']
+        fields = ['product', 'quantity', 'price', 'images']
+
+# class CustomerOrderSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = CustomerOrder
+#         fields = ['id', 'status', 'total_price', 'delivery_charge', 'net_total', 'payment_type', 'delivery_address', 'created_at', 'updated_at']
+
 
 class CustomerOrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True)
+    
     class Meta:
         model = CustomerOrder
-        fields = ['id', 'status', 'total_price', 'delivery_charge', 'net_total', 'payment_type', 'delivery_address', 'created_at', 'updated_at']
+        fields = ['status', 'total_price', 'delivery_charge', 'net_total', 'payment_type', 
+                  'order_number', 'delivery_address', 'payment_status', 'tracking_number', 
+                  'carrier', 'is_canceled', 'items']
 class BankAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankAccount

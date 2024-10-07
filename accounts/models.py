@@ -244,14 +244,21 @@ class CustomerOrder(models.Model):
         ('Ordered', 'Ordered'),
         ('Shipped', 'Shipped'),
         ('Delivered', 'Delivered'),
+        ('CANCELLED', 'Cancelled'),
     ]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=50, choices=[('1', 'Ordered'), ('2', 'Shipped'), ('3', 'Delivered')], default='1')
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     delivery_charge = models.DecimalField(max_digits=10, decimal_places=2)
     net_total = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_type = models.CharField(max_length=50, blank=True, null=True)
+    # payment_type = models.CharField(max_length=50, blank=True, null=True)
+    payment_type = models.CharField(max_length=50, choices=[('COD', 'COD'), ('UPI', 'UPI'), ('CREDIT CARD', 'CREDIT CARD'), ('DEBIT CARD', 'DEBIT CARD')], default='COD')
+    order_number = models.CharField(max_length=100, unique=True)
     delivery_address = models.ForeignKey(DeliveryAddress, on_delete=models.SET_NULL, null=True)
+    payment_status = models.CharField(max_length=50, choices=[('Pending', 'Pending'), ('Completed', 'Completed')], default='Pending')
+    tracking_number = models.CharField(max_length=100, blank=True, null=True)
+    carrier = models.CharField(max_length=100, blank=True, null=True)
+    is_canceled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -267,7 +274,7 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.quantity} of {self.product.name}"
 
-class ProductImage(models.Model):
+class OrderProductImage(models.Model):
     order_item = models.ForeignKey(OrderItem, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to='order_item_images/')
 

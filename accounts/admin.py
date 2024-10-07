@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Profile,BankAccount ,SocialLink, Product, Category, Subcategory, CustomerOrder, OrderItem, DeliveryAddress, Brand, Banner
+from .models import Profile,BankAccount ,SocialLink, Product, Category, Subcategory, CustomerOrder, OrderItem, DeliveryAddress, Brand, Banner, Productimg, OrderProductImage
 # Register your models here.
 
 class ProfileAdmin(admin.ModelAdmin):
@@ -57,9 +57,11 @@ admin.site.register(Profile,ProfileAdmin)
 admin.site.register(BankAccount,BankAccountAdmin)
 admin.site.register(SocialLink,SocialLinkAdmin)
 admin.site.register(Product, ProductAdmin)
+admin.site.register(Productimg)
 admin.site.register(Category)
 admin.site.register(Subcategory)
 admin.site.register(CustomerOrder)
+admin.site.register(OrderProductImage)
 admin.site.register(OrderItem)
 admin.site.register(DeliveryAddress)
 admin.site.register(Brand)
