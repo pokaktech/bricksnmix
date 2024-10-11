@@ -5,6 +5,7 @@ from PIL import Image
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import slugify
 from .utils import code_generator, create_shortcode
+from datetime import timedelta
 
 class Profile(models.Model):
     image = models.ImageField(
@@ -270,9 +271,18 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    delivery_time = models.IntegerField(default=7)  # Estimated delivery time in days
+    delivered_at = models.DateField(null=True, blank=True)  # Actual delivery date
 
     def __str__(self):
         return f"{self.quantity} of {self.product.name}"
+    
+    def estimated_delivery_date(self):
+        if self.delivered_at:
+            # If the product is delivered, return the actual delivery date
+            return self.delivered_at
+        # Otherwise, calculate the estimated delivery date
+        return self.order.created_at + timedelta(days=self.delivery_time)
 
 class OrderProductImage(models.Model):
     order_item = models.ForeignKey(OrderItem, related_name='images', on_delete=models.CASCADE)

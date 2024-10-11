@@ -35,6 +35,13 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'image', 'subcategories']
+
+class CustomerCategorySerializer(serializers.ModelSerializer):
+    # subcategories = SubcategorySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'image']
         
 class BannerSerializer(serializers.ModelSerializer):
     bannername = serializers.CharField(source='name')

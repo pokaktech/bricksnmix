@@ -46,7 +46,7 @@ from .models import Banner, Brand, Product, Productimg, Cart, CartItem, OrderPro
 from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer, CustomerSignupSerializer, SellerSignupSerializer
 from django.shortcuts import get_object_or_404
 from .models import CustomerOrder, OrderItem
-from .serializers import CustomerOrderSerializer, OrderItemSerializer
+from .serializers import CustomerOrderSerializer, OrderItemSerializer, CustomerCategorySerializer
 from accounts.models import DeliveryAddress
 from .models import Wishlist, WishlistItem
 from .models import BankAccount
@@ -1603,7 +1603,7 @@ class CartView(APIView):
             items.append({
                 'product_id': item.product.id,
                 'product_name': item.product.name,
-                'product_images': product_image,
+                'product_images': f"media/{product_image}" if product_image != None else None,
                 'quantity': item.quantity,
                 'price_per_item': item.product.price,
                 'delivery_charge': item.product.delivery_charge,
@@ -1733,21 +1733,28 @@ class UpdateCart(APIView):
         # Update the cart item quantity
         cart_item.quantity = int(quantity)
         cart_item.save()
-
+        serializer = ProductSerializer(product)
+        product_data = serializer.data
+        product_data['quantity'] = cart_item.quantity
+        print("ddd", product_data)
         if cart_item.quantity < product.min_order_quantity:
             delivery_charge = product.delivery_charge
+            products = Product.objects.filter(vendor=user)
+            # serializer = ProductSerializer(product)
             return Response({
                 "Status": "1",
                 "message": "Cart updated successfully",
                 "delivery_charge": delivery_charge,
-                "info": f"You need to pay a delivery charge of {delivery_charge} as the quantity is less than the minimum order quantity."
+                "info": f"You need to pay a delivery charge of {delivery_charge} as the quantity is less than the minimum order quantity.",
+                "Data": [product_data]
             }, status=status.HTTP_200_OK)
         
         # If no delivery charge
         return Response({
             "Status": "1",
             "message": "Cart updated successfully",
-            "delivery_charge": 0.0
+            "delivery_charge": 0.0,
+            "Data": [product_data]
         }, status=status.HTTP_200_OK)
 
 
@@ -1770,7 +1777,6 @@ class DeliveryAddressListCreateView(ListCreateAPIView):
         addresses = DeliveryAddress.objects.filter(user=user).exclude(id=default_address.id if default_address else None)
         print(addresses)
         if default_address:
-            print("kokpo")
             return DeliveryAddress.objects.filter(id=default_address.id).union(addresses)
         else:
             return addresses
@@ -1964,7 +1970,7 @@ class Checkout(APIView):
                 "id": item.product.id,
                 "name": item.product.name,
                 "price": item.product.price,
-                'product_images': product_image,
+                'product_images': f'media/{product_image}' if product_image != None else None,
                 'quantity': item.quantity,
                 "offer_percent": item.product.offer_percent,
                 "actual_price": item.product.actual_price,
@@ -2014,6 +2020,8 @@ def get_cart_item(request):
 
 
 class PlaceOrderView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
     def post(self, request, format=None):
         user = request.user  # Assuming the user is authenticated
 
@@ -2022,44 +2030,157 @@ class PlaceOrderView(APIView):
         profile = Profile.objects.get(user=user)
         delivery_address = profile.default_address
 
-        cart = Cart.objects.get(user=user)
-        cart_items = CartItem.objects.filter(cart=cart)
+        try:
+            cart = Cart.objects.get(user=user)
+            cart_items = CartItem.objects.filter(cart=cart)
+        except:
+            return Response({"Status": "0", "message": "No cart Found"})
         
-        # Generate a unique order number
-        order_number = get_random_string(length=15)
-
-        # Creating the order
-        order = CustomerOrder.objects.create(
-            user=user,
-            status='1',  # Ordered
-            total_price= full_cart['offer_price'],  # Set any dummy price or calculate from cart
-            delivery_charge= full_cart['delivery_charge'],  # Dummy delivery charge
-            net_total= full_cart['total_price'],  # Total price + delivery charge
-            payment_type='COD',  # Dummy payment type
-            order_number=order_number,
-            delivery_address=delivery_address,
-            payment_status='Pending'
-        )
-
-        # Create Order Items with images
-        products = Product.objects.all()  # Fetch some products (you can change logic here)
+        if cart_items:
         
-        for item in cart_items:
-            # quantity = item.quantity  # Example quantity
-            order_item = OrderItem.objects.create(
-                order=order,
-                product=item.product,
-                quantity=item.quantity,
-                price=item.product.price,  # Use product price or custom price
+            # Generate a unique order number
+            order_number = get_random_string(length=15)
+
+            # Creating the order
+            order = CustomerOrder.objects.create(
+                user=user,
+                status='1',  # Ordered
+                total_price= full_cart['offer_price'],  # Set any dummy price or calculate from cart
+                delivery_charge= full_cart['delivery_charge'],  # Dummy delivery charge
+                net_total= full_cart['total_price'],  # Total price + delivery charge
+                payment_type='COD',  # Dummy payment type
+                order_number=order_number,
+                delivery_address=delivery_address,
+                payment_status='Pending'
             )
 
-            # Example logic to associate images (you can modify this as needed)
-            for img in item.product.product_images.all():  # Assuming you have a related_name 'images' in the Product model
-                OrderProductImage.objects.create(
-                    order_item=order_item,
-                    image=img.image  # Use the image from the product's images
+            # Create Order Items with images
+            products = Product.objects.all()  # Fetch some products (you can change logic here)
+
+            for item in cart_items:
+                # quantity = item.quantity  # Example quantity
+                order_item = OrderItem.objects.create(
+                    order=order,
+                    product=item.product,
+                    quantity=item.quantity,
+                    price=item.product.price,  # Use product price or custom price
                 )
 
-        # Serialize and return the order
-        serializer = CustomerOrderSerializer(order)
-        return Response({"Status": "1", "message": "Success", "Data": serializer.data}, status=status.HTTP_201_CREATED)
+                # Example logic to associate images (you can modify this as needed)
+                for img in item.product.product_images.all():  # Assuming you have a related_name 'images' in the Product model
+                    OrderProductImage.objects.create(
+                        order_item=order_item,
+                        image=img.image  # Use the image from the product's images
+                    )
+            cart_items.delete()
+            # Serialize and return the order
+            serializer = CustomerOrderSerializer(order)
+            return Response({"Status": "1", "message": "Success", "Data": serializer.data}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"Status": "0", "message": "No items in the cart"})
+
+
+class CustomerCategoryListView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CustomerCategorySerializer
+
+    def list(self, request, *args, **kwargs):
+        categories = self.get_queryset()
+        serializer = self.get_serializer(categories, many=True)
+
+        return Response({
+            'Status': '1',
+            'message': 'Categories fetched successfully',
+            'data': serializer.data
+        })
+
+class CustomerCategoryDetailView(APIView):
+    def get(self, request, pk):
+        try:
+            category = Category.objects.get(pk=pk)
+        except Category.DoesNotExist:
+            return Response({
+                'Status': '0',
+                'message': 'Category not found',
+                'Data': None
+            }, status=404)
+
+        # Get products associated with the category
+        products = Product.objects.filter(category=category)
+        product_serializer = ProductSerializer(products, many=True)
+
+        # Return category and products
+        return Response({
+            'Status': '1',
+            'message': 'Category details fetched successfully',
+            'Data': product_serializer.data
+                # 'category': CustomerCategorySerializer(category).data,
+            
+        })
+    
+
+# class AllOrdersView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [TokenAuthentication]
+#     def get(self, request):
+#         user = request.user
+#         profile = Profile.objects.get(user=user)
+#         if profile.user_type == "customer":
+#             try:
+#                 orders = CustomerOrder.objects.filter(user=user)
+#                 serializer = CustomerOrderSerializer(orders, many=True)
+#                 return Response({
+#                     'Status': '1',
+#                     'message': "Success",
+#                     "Data": serializer.data
+#                 }, status=status.HTTP_200_OK)
+#             except:
+#                 return Response({'Status': '1', 'message': "You have no orders to view"}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+class AllOrdersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # Get all the orders of the logged-in user
+        orders = CustomerOrder.objects.filter(user=user)
+
+        if not orders.exists():
+            return Response({
+                'Status': '0',
+                'message': 'No orders found for this user',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Get all the order items related to the user's orders
+        order_items = OrderItem.objects.filter(order__in=orders)
+
+        if not order_items.exists():
+            return Response({
+                'Status': '0',
+                'message': 'No products found for this user',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Prepare response data
+        response_data = []
+        for item in order_items:
+            product_data = ProductSerializer(item.product).data
+            product_data['order_number'] = item.order.order_number
+            product_data['status'] = item.order.get_status_display()
+            product_data['delivery_from'] = item.product.vendor.profile.address if item.product.vendor else "Unknown"
+            product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
+            product_data['delivery_date'] = item.estimated_delivery_date().strftime("%d %b %Y")
+            product_data['quantity'] = item.quantity
+
+            response_data.append(product_data)
+
+        return Response({
+            'Status': '1',
+            'message': 'Products retrieved successfully',
+            'Data': response_data
+        }, status=status.HTTP_200_OK)

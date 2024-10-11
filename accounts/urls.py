@@ -7,7 +7,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -106,6 +106,9 @@ urlpatterns = [
     path('addresses/<int:pk>/', DeliveryAddressDetailView.as_view(), name='address-detail'),
     path('select_delivery_option/', DefaultDeliveryAddressView.as_view(), name='select-delivery-option'),
     path('order-checkout/', Checkout.as_view(), name='checkout'),
+    path('customer-categories/', CustomerCategoryListView.as_view(), name='category-list'),
+    path('customer-categories/<int:pk>/', CustomerCategoryDetailView.as_view(), name='category-detail'),
+    path('all-orders/', AllOrdersView.as_view(), name='all-orders'),
 ]
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
