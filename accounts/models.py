@@ -241,14 +241,14 @@ class DeliveryAddress(models.Model):
         return f"{self.name} - {self.mobile}"
 
 class CustomerOrder(models.Model):
-    STATUS_CHOICES = [
-        ('Ordered', 'Ordered'),
-        ('Shipped', 'Shipped'),
-        ('Delivered', 'Delivered'),
-        ('CANCELLED', 'Cancelled'),
-    ]
+    # STATUS_CHOICES = [
+    #     ('Ordered', 'Ordered'),
+    #     ('Shipped', 'Shipped'),
+    #     ('Delivered', 'Delivered'),
+    #     ('CANCELLED', 'Cancelled'),
+    # ]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.CharField(max_length=50, choices=[('1', 'Ordered'), ('2', 'Shipped'), ('3', 'Delivered')], default='1')
+    # status = models.CharField(max_length=50, choices=[('1', 'Ordered'), ('2', 'Shipped'), ('3', 'Delivered')], default='1')
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     delivery_charge = models.DecimalField(max_digits=10, decimal_places=2)
     net_total = models.DecimalField(max_digits=10, decimal_places=2)
@@ -268,7 +268,15 @@ class CustomerOrder(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(CustomerOrder, related_name='items', on_delete=models.CASCADE)
+    STATUS_CHOICES = [
+        ('Ordered', 'Ordered'),
+        ('Shipped', 'Shipped'),
+        ('Delivered', 'Delivered'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+    status = models.CharField(max_length=50, choices=[('1', 'Ordered'), ('2', 'Shipped'), ('3', 'Delivered')], default='1')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    is_approved = models.BooleanField(default=False)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     delivery_time = models.IntegerField(default=7)  # Estimated delivery time in days

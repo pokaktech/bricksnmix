@@ -173,7 +173,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     images = OrderProductImageSerializer(many=True, read_only=True)
     class Meta:
         model = OrderItem
-        fields = ['product', 'quantity', 'price', 'images']
+        fields = ['product', 'status', 'is_approved', 'quantity', 'price', 'images']
 
 # class CustomerOrderSerializer(serializers.ModelSerializer):
 #     class Meta:
@@ -186,7 +186,7 @@ class CustomerOrderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CustomerOrder
-        fields = ['status', 'total_price', 'delivery_charge', 'net_total', 'payment_type', 
+        fields = ['total_price', 'delivery_charge', 'net_total', 'payment_type', 
                   'order_number', 'delivery_address', 'payment_status', 'tracking_number', 
                   'carrier', 'is_canceled', 'items']
 class BankAccountSerializer(serializers.ModelSerializer):

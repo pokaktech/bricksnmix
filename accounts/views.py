@@ -2044,7 +2044,7 @@ class PlaceOrderView(APIView):
             # Creating the order
             order = CustomerOrder.objects.create(
                 user=user,
-                status='1',  # Ordered
+                # status='1',  # Ordered
                 total_price= full_cart['offer_price'],  # Set any dummy price or calculate from cart
                 delivery_charge= full_cart['delivery_charge'],  # Dummy delivery charge
                 net_total= full_cart['total_price'],  # Total price + delivery charge
@@ -2061,6 +2061,7 @@ class PlaceOrderView(APIView):
                 # quantity = item.quantity  # Example quantity
                 order_item = OrderItem.objects.create(
                     order=order,
+                    status='1',
                     product=item.product,
                     quantity=item.quantity,
                     price=item.product.price,  # Use product price or custom price
@@ -2171,7 +2172,105 @@ class AllOrdersView(APIView):
         for item in order_items:
             product_data = ProductSerializer(item.product).data
             product_data['order_number'] = item.order.order_number
-            product_data['status'] = item.order.get_status_display()
+            # product_data['status'] = item.order.get_status_display()
+            product_data['status'] = item.get_status_display()
+            product_data['is_approved'] = item.is_approved
+            product_data['delivery_from'] = item.product.vendor.profile.address if item.product.vendor else "Unknown"
+            product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
+            product_data['delivery_date'] = item.estimated_delivery_date().strftime("%d %b %Y")
+            product_data['quantity'] = item.quantity
+
+            response_data.append(product_data)
+
+        return Response({
+            'Status': '1',
+            'message': 'Products retrieved successfully',
+            'Data': response_data
+        }, status=status.HTTP_200_OK)
+    
+
+
+
+class PendingOrdersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # Get all the orders of the logged-in user
+        orders = CustomerOrder.objects.filter(user=user)
+
+        if not orders.exists():
+            return Response({
+                'Status': '0',
+                'message': 'No delivered orders found for this user',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Get all the order items related to the user's orders
+        order_items = OrderItem.objects.filter(order__in=orders, is_approved=False)
+
+        if not order_items.exists():
+            return Response({
+                'Status': '0',
+                'message': 'No products found for this user',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Prepare response data
+        response_data = []
+        for item in order_items:
+            product_data = ProductSerializer(item.product).data
+            product_data['order_number'] = item.order.order_number
+            product_data['status'] = item.get_status_display()
+            product_data['is_approved'] = item.is_approved
+            product_data['delivery_from'] = item.product.vendor.profile.address if item.product.vendor else "Unknown"
+            product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
+            product_data['delivery_date'] = item.estimated_delivery_date().strftime("%d %b %Y")
+            product_data['quantity'] = item.quantity
+
+            response_data.append(product_data)
+
+        return Response({
+            'Status': '1',
+            'message': 'Products retrieved successfully',
+            'Data': response_data
+        }, status=status.HTTP_200_OK)
+    
+
+class DeliveredOrdersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # Get all the orders of the logged-in user
+        orders = CustomerOrder.objects.filter(user=user)
+
+        if not orders.exists():
+            return Response({
+                'Status': '0',
+                'message': 'No delivered orders found for this user',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Get all the order items related to the user's orders
+        order_items = OrderItem.objects.filter(order__in=orders, status="3", is_approved=True)
+
+        if not order_items.exists():
+            return Response({
+                'Status': '0',
+                'message': 'No products found for this user',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Prepare response data
+        response_data = []
+        for item in order_items:
+            product_data = ProductSerializer(item.product).data
+            product_data['order_number'] = item.order.order_number
+            product_data['status'] = item.get_status_display()
+            product_data['is_approved'] = item.is_approved
             product_data['delivery_from'] = item.product.vendor.profile.address if item.product.vendor else "Unknown"
             product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
             product_data['delivery_date'] = item.estimated_delivery_date().strftime("%d %b %Y")
