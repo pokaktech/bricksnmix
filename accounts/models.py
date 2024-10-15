@@ -6,6 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.text import slugify
 from .utils import code_generator, create_shortcode
 from datetime import timedelta
+from django.utils.timezone import now
 
 class Profile(models.Model):
     image = models.ImageField(
@@ -174,6 +175,8 @@ class Product(models.Model):
     product_rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
     stock = models.IntegerField(default=0)
     stock_status = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=now)  # Auto-set when created
+    updated_at = models.DateTimeField(auto_now=True)  # Auto-update on save
     # images = models.JSONField(blank=True,null=True)
 
     def save(self, *args, **kwargs):
@@ -196,6 +199,8 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(default=now)  # Auto-set when created
+    updated_at = models.DateTimeField(auto_now=True)  # Auto-update on save
            
 class Productimg(models.Model):
     product = models.ForeignKey(Product, related_name='product_images', on_delete=models.CASCADE)
@@ -233,6 +238,8 @@ class DeliveryAddress(models.Model):
     pincode = models.IntegerField(default=0)
     city = models.CharField(max_length=100)
     landmark = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(default=now)  # Auto-set when created
+    updated_at = models.DateTimeField(auto_now=True)  # Auto-update on save
     # is_default = models.BooleanField(default=False)
     # latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     # longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)

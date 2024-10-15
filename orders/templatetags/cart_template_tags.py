@@ -24,8 +24,8 @@ def cart_items_count(user):
 @register.filter
 def underway_orders_count(user):
     if user.is_authenticated and not user.is_anonymous:
-        if CustomerOrder.objects.all().filter(status="Underway"):
-            underway_orders = CustomerOrder.objects.all().filter(status="Underway").count()
+        if CustomerOrder.objects.all():
+            underway_orders = OrderItem.objects.all().filter(is_approved=False).count()
             return underway_orders
 
         else:

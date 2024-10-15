@@ -38,8 +38,8 @@ class SocialLinkAdmin(admin.ModelAdmin):
     list_per_page = 10    
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'price', 'offer_percent', 'actual_price', 'product_rating', 'stock')
-    list_filter = ('category', 'price', 'product_rating')
+    list_display = ('name', 'category', 'price', 'offer_percent', 'brand', 'actual_price', 'product_rating', 'stock')
+    list_filter = ('category', 'price', 'product_rating', 'brand')
     search_fields = ('name', 'description')
     ordering = ('-price',)
     readonly_fields = ('product_rating',)

@@ -770,16 +770,32 @@ class SubcategoryRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIV
 
         
         
-class ProductSearchView(APIView):
+# class ProductSearchView(APIView):
     
-    def post(self, request):
-        search_word = request.data.get('search_word', '')
-        if search_word:
-            products = Product.objects.filter(name__icontains=search_word)
-            serializer = ProductSerializer(products, many=True)
-            return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data}, status=status.HTTP_200_OK)
-        else:
-            return Response({'Status': '0', 'message': 'Search word not provided'}, status=status.HTTP_400_BAD_REQUEST)
+#     def post(self, request):
+#         search_word = request.data.get('search_word', '')
+#         category = request.data.get('category', '')
+#         brand = request.data.get('brand', '')
+#         # subcategory = request.get('subcategory', '')
+#         # trending_products = request.get('trending_products', '')
+#         if search_word:
+#             if category:
+#                 category_obj = Category.objects.get(id=category)
+#                 products = Product.objects.filter(category=category_obj)
+#             if brand:
+#                 # brand_obj = Brand.objects.get(id=brand)
+#                 brand_obj = get_object_or_404(Brand, id=brand)
+#                 if brand_obj:
+#                     products = Product.objects.filter(brand=brand_obj)
+#                     serializer = ProductSerializer(products, many=True)
+#                     return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data}, status=status.HTTP_200_OK)
+#                 else:
+#                     return Response({'Status': '0', 'message': 'Brand not found'}, status=status.HTTP_400_BAD_REQUEST)
+#             products = Product.objects.filter(name__icontains=search_word)
+#             serializer = ProductSerializer(products, many=True)
+#             return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data}, status=status.HTTP_200_OK)
+#         else:
+#             return Response({'Status': '0', 'message': 'Search word not provided'}, status=status.HTTP_400_BAD_REQUEST)
         
 class RatingReviewListCreate(APIView):
     permission_classes = [IsAuthenticated]
@@ -1976,7 +1992,7 @@ class Checkout(APIView):
                 "actual_price": item.product.actual_price,
                 "delivery_charge": item.product.delivery_charge
             })
-        return Response({"Status": "1", "message": "Success", "Data": data, "delivery_charge": sum(total_delivery_charge), "actual_prices": sum(actual_price), "offer_price": sum(offer_price), "total_price": sum(total_price) + sum(total_delivery_charge)}, status=status.HTTP_200_OK)
+        return Response({"Status": "1", "message": "Success", "Data": data, "delivery_charge": "0.0" if sum(total_delivery_charge) == 0 else sum(total_delivery_charge), "actual_prices": sum(actual_price), "offer_price": sum(offer_price), "total_price": sum(total_price) + sum(total_delivery_charge)}, status=status.HTTP_200_OK)
     
 
 
@@ -2092,7 +2108,7 @@ class CustomerCategoryListView(generics.ListAPIView):
         return Response({
             'Status': '1',
             'message': 'Categories fetched successfully',
-            'data': serializer.data
+            'Data': serializer.data
         })
 
 class CustomerCategoryDetailView(APIView):
@@ -2283,3 +2299,78 @@ class DeliveredOrdersView(APIView):
             'message': 'Products retrieved successfully',
             'Data': response_data
         }, status=status.HTTP_200_OK)
+
+
+
+
+class CustomerBrandListView(generics.ListAPIView):
+    queryset = Brand.objects.all()
+    serializer_class = BrandSerializer
+
+    def list(self, request, *args, **kwargs):
+        categories = self.get_queryset()
+        serializer = self.get_serializer(categories, many=True)
+
+        return Response({
+            'Status': '1',
+            'message': 'Categories fetched successfully',
+            'Data': serializer.data
+        })
+
+class CustomerBrandDetailView(APIView):
+    def get(self, request, pk):
+        try:
+            brand = Brand.objects.get(pk=pk)
+        except Brand.DoesNotExist:
+            return Response({
+                'Status': '0',
+                'message': 'Brand not found',
+                'Data': None
+            }, status=404)
+
+        # Get products associated with the category
+        products = Product.objects.filter(brand=brand)
+        product_serializer = ProductSerializer(products, many=True)
+
+        # Return category and products
+        return Response({
+            'Status': '1',
+            'message': 'Brand details fetched successfully',
+            'Data': product_serializer.data
+                # 'category': CustomerCategorySerializer(category).data,
+            
+        })
+    
+
+class ProductSearchView(APIView):
+    def post(self, request):
+        search_word = request.data.get('search_word', '')
+        if search_word:
+            products = Product.objects.filter(name__icontains=search_word)
+            serializer = ProductSerializer(products, many=True)
+            return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data})
+        return Response({'Status': '0', 'message': 'Search word not provided'})
+
+
+
+class CategoryProductSearchView(APIView):
+    def post(self, request, category_id):
+        search_word = request.data.get('search_word', '')
+        if search_word:
+            category = get_object_or_404(Category, id=category_id)
+            products = Product.objects.filter(category=category, name__icontains=search_word)
+            serializer = ProductSerializer(products, many=True)
+            return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data})
+        return Response({'Status': '0', 'message': 'Search word not provided'})
+
+
+
+class BrandProductSearchView(APIView):
+    def post(self, request, brand_id):
+        search_word = request.data.get('search_word', '')
+        if search_word:
+            brand = get_object_or_404(Brand, id=brand_id)
+            products = Product.objects.filter(brand=brand, name__icontains=search_word)
+            serializer = ProductSerializer(products, many=True)
+            return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data})
+        return Response({'Status': '0', 'message': 'Search word not provided'})

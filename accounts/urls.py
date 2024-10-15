@@ -7,7 +7,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView, PendingOrdersView, DeliveredOrdersView
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView, PendingOrdersView, DeliveredOrdersView, CustomerBrandListView, CustomerBrandDetailView, CategoryProductSearchView, BrandProductSearchView
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -58,7 +58,7 @@ urlpatterns = [
     path('getProductDetails/', ProductDetail.as_view(), name='get-product-details'),
     path('getAllProducts/', ProductDetail.as_view(), name='get-all-products'),
     path('addProduct/', ProductDetail.as_view(), name='add-product'),
-    path('getSearchedProducts/', ProductSearchView.as_view(), name='get-searched-products'),
+    # path('getSearchedProducts/', ProductSearchView.as_view(), name='get-searched-products'),  ---- commented because created new endpoints at the end.
     path('reviews/', RatingReviewListCreate.as_view(), name='review_list_create'),
     path('reviews/<int:pk>/', RatingReviewDetail.as_view(), name='review_detail'),
     # path('get_cart/', GetCart.as_view(), name='get_cart'),
@@ -111,6 +111,11 @@ urlpatterns = [
     path('all-orders/', AllOrdersView.as_view(), name='all-orders'),
     path('pending-orders/', PendingOrdersView.as_view(), name='pending-orders'),
     path('delivered-orders/', DeliveredOrdersView.as_view(), name='delivered-orders'),
+    path('customer-brand/', CustomerBrandListView.as_view(), name='brand-list'),
+    path('customer-brand/<int:pk>/', CustomerBrandDetailView.as_view(), name='brand-detail'),
+    path('search-product/', ProductSearchView.as_view(), name='global_search'),
+    path('search-product/category/<int:category_id>/', CategoryProductSearchView.as_view(), name='category_search'),
+    path('search-product/brand/<int:brand_id>/', BrandProductSearchView.as_view(), name='brand_search'),
 ]
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -62,7 +62,8 @@ class BrandSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Brand
-        fields = [ 'brandname', 'image']        
+        fields = [ 'id', 'brandname', 'image']  
+        read_only_fields = ['id']      
 
 
 class OfferProductSerializer(serializers.ModelSerializer):
@@ -108,8 +109,8 @@ class ProductSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = ['id', 'vendor', 'category', 'subcategory', 'brand', 'name', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'stock_status', 'min_order_quantity', 'delivery_charge', 'product_images']
-        read_only_fields = ['product_rating']
+        fields = ['id', 'vendor', 'category', 'subcategory', 'brand', 'name', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'stock_status', 'min_order_quantity', 'delivery_charge', 'product_images', 'created_at', 'updated_at']
+        read_only_fields = ['product_rating', 'created_at', 'updated_at']
 
     def create(self, validated_data):
         images_data = self.context['request'].FILES.getlist('images')
@@ -143,7 +144,8 @@ class RatingReviewSerializer(serializers.ModelSerializer):
 class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartItem
-        fields = ['id', 'product', 'quantity']
+        fields = ['id', 'product', 'quantity', 'created_at', 'updated_at']
+        read_only_fields = ('created_at', 'updated_at')
 
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True)
@@ -155,7 +157,8 @@ class CartSerializer(serializers.ModelSerializer):
 class DeliveryAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryAddress
-        fields = ['id', 'name', 'mobile', 'housename', 'state', 'city', 'landmark', 'pincode']
+        fields = ['id', 'name', 'mobile', 'housename', 'state', 'city', 'landmark', 'pincode', 'created_at', 'updated_at']
+        read_only_fields = ('created_at', 'updated_at')
 
 class OrderProductImageSerializer(serializers.ModelSerializer):
     class Meta:
