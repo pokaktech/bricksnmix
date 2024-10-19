@@ -7,7 +7,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView, PendingOrdersView, DeliveredOrdersView, CustomerBrandListView, CustomerBrandDetailView, CategoryProductSearchView, BrandProductSearchView
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView, PendingOrdersView, DeliveredOrdersView, CustomerBrandListView, CustomerBrandDetailView, CategoryProductSearchView, BrandProductSearchView, GetSellerOrders, WishlistView
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -116,6 +116,9 @@ urlpatterns = [
     path('search-product/', ProductSearchView.as_view(), name='global_search'),
     path('search-product/category/<int:category_id>/', CategoryProductSearchView.as_view(), name='category_search'),
     path('search-product/brand/<int:brand_id>/', BrandProductSearchView.as_view(), name='brand_search'),
+    path('get-seller-orders/', GetSellerOrders.as_view(), name='get_seller_orders'),
+    path('api/wishlist/', WishlistView.as_view(), name='wishlist'),
+    path('api/wishlist/<int:product_id>/', WishlistView.as_view(), name='wishlist-item'),
 ]
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -43,7 +43,7 @@ from .models import Category, Subcategory, RatingReview
 from .serializers import CategorySerializer,RatingReviewSerializer, DeliveryAddressSerializer
 from rest_framework import status
 from .models import Banner, Brand, Product, Productimg, Cart, CartItem, OrderProductImage
-from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer, CustomerSignupSerializer, SellerSignupSerializer
+from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer, CustomerSignupSerializer, SellerSignupSerializer, WishlistSerializer
 from django.shortcuts import get_object_or_404
 from .models import CustomerOrder, OrderItem
 from .serializers import CustomerOrderSerializer, OrderItemSerializer, CustomerCategorySerializer
@@ -1266,7 +1266,7 @@ class GetOrderBySellerID(APIView):
 
         seller = get_object_or_404(User, id=seller_id)
         orders = CustomerOrder.objects.filter(user=seller)
-
+        print(orders)
         order_data = []
         for order in orders:
             delivery_address = order.delivery_address
@@ -1619,12 +1619,14 @@ class CartView(APIView):
             items.append({
                 'product_id': item.product.id,
                 'product_name': item.product.name,
-                'product_images': f"media/{product_image}" if product_image != None else None,
+                'product_images': f"/media/{product_image}" if product_image != None else None,
                 'quantity': item.quantity,
                 'price_per_item': item.product.price,
                 'delivery_charge': item.product.delivery_charge,
                 'min_order_quantity': item.product.min_order_quantity,
-                'total_price': item.quantity * item.product.price
+                'total_price': item.quantity * item.product.price,
+                'created_at': item.created_at,
+                'updated_at': item.updated_at
             })
 
         return Response({
@@ -1986,7 +1988,7 @@ class Checkout(APIView):
                 "id": item.product.id,
                 "name": item.product.name,
                 "price": item.product.price,
-                'product_images': f'media/{product_image}' if product_image != None else None,
+                'product_images': f'/media/{product_image}' if product_image != None else None,
                 'quantity': item.quantity,
                 "offer_percent": item.product.offer_percent,
                 "actual_price": item.product.actual_price,
@@ -2374,3 +2376,129 @@ class BrandProductSearchView(APIView):
             serializer = ProductSerializer(products, many=True)
             return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data})
         return Response({'Status': '0', 'message': 'Search word not provided'})
+    
+
+
+
+class GetSellerOrders(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get(self, request):
+        user = request.user
+
+        # Check if the user is a seller
+        if user.profile.user_type != 'seller':
+            return Response({'Status': '0', 'message': 'You are not authorized to view products as you are not a seller.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            # If a specific product ID is provided, fetch the product and check if it belongs to the seller
+            order_items = OrderItem.objects.filter(product__vendor=user)
+            print("dsadd",order_items[0].product)
+            # else:
+            #     # Fetch all products related to the vendor (seller)
+            # serializer = ProductSerializer(products, many=True)
+            # print(serializer)
+            data = []
+            for item in order_items:
+                data.append({
+                    "name": item.product.name,
+                    "price": item.product.price,
+                    "quantity": item.quantity,
+                    "delivery_from": item.order.delivery_address.city
+                })
+            # return Response({'Status: 1', 'message': 'Success', })
+            return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found or you do not own this product.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+class WishlistView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get(self, request):
+        user = request.user
+
+        wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+
+        wishlist_items = WishlistItem.objects.filter(wishlist=wishlist)
+
+        # Prepare the cart items data
+        items = []
+        for item in wishlist_items:
+            product_images = Productimg.objects.filter(product=item.product).values_list('image', flat=True)  # Get all product images
+            product_image = product_images[0] if product_images else None  # Choose the first image or None if no image
+            items.append({
+                'product_id': item.product.id,
+                'product_name': item.product.name,
+                'product_images': f"/media/{product_image}" if product_image != None else None,
+                'price_per_item': item.product.price,
+                'delivery_charge': item.product.delivery_charge,
+                'min_order_quantity': item.product.min_order_quantity,
+                'created_at': item.added_at
+            })
+
+        return Response({
+            'Status': '1',
+            'wishlist_id': wishlist.id,
+            'total_items': len(items),
+            'items': items,
+        }, status=status.HTTP_200_OK)
+
+    # def get(self, request):
+    #     # Get or create the user's wishlist
+    #     wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+
+    #     # Serialize and return the wishlist items
+    #     serializer = WishlistSerializer(wishlist)
+    #     return Response({
+    #         'Status': '1',
+    #         'Message': 'Success',
+    #         'Data': [serializer.data]
+    #     }, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        product = Product.objects.filter(id=product_id).first()
+        
+        if not product:
+            return Response({
+                'Status': '0',
+                'Message': 'Product not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Get or create the user's wishlist
+        wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+
+        # Add the product to the wishlist
+        WishlistItem.objects.get_or_create(wishlist=wishlist, product=product)
+
+        return Response({
+            'Status': '1',
+            'Message': 'Product added to wishlist'
+        }, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, product_id):
+        # Get the user's wishlist
+        wishlist = Wishlist.objects.filter(user=request.user).first()
+
+        if wishlist:
+            wishlist_item = WishlistItem.objects.filter(wishlist=wishlist, product_id=product_id).first()
+            if wishlist_item:
+                wishlist_item.delete()
+                return Response({
+                    'Status': '1',
+                    'message': 'Product removed from wishlist'
+                }, status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({
+                    'Status': '0',
+                    'message': 'Product not in wishlist'
+                }, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response({
+            'Status': '0',
+            'message': 'Wishlist not found'
+        }, status=status.HTTP_404_NOT_FOUND)

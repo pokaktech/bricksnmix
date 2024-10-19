@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Subcategory, Banner, Brand, Product, Productimg, RatingReview,Cart, CartItem, CustomerOrder, OrderItem, DeliveryAddress, OrderProductImage
+from .models import Category, Subcategory, Banner, Brand, Product, Productimg, RatingReview,Cart, CartItem, CustomerOrder, OrderItem, DeliveryAddress, OrderProductImage, Wishlist, WishlistItem
 from django.contrib.auth.models import User
 from .models import BankAccount, Profile
 from .models import SocialLink
@@ -164,6 +164,19 @@ class OrderProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderProductImage
         fields = ['image']
+
+
+class WishlistItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WishlistItem
+        fields = ['id', 'product']
+
+class WishlistSerializer(serializers.ModelSerializer):
+    items = WishlistItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Wishlist
+        fields = ['id', 'user', 'items']
 
 # class OrderItemSerializer(serializers.ModelSerializer):
 #     images = ProductImageSerializer(many=True, read_only=True)
