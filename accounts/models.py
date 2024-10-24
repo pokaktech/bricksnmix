@@ -8,6 +8,27 @@ from .utils import code_generator, create_shortcode
 from datetime import timedelta
 from django.utils.timezone import now
 
+
+
+
+class TemporaryUserContact(models.Model):
+    email = models.EmailField(unique=True)
+    mobile_number = models.CharField(max_length=15, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.email
+
+
+
+class SuperAdmin(models.Model):
+    purpose = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=15)
+
+    def __str__(self):
+        return f"{self.phone_number} ({self.purpose})"
+
+
 class Profile(models.Model):
     image = models.ImageField(
         upload_to='profile_pic/', blank=True, null=True, )

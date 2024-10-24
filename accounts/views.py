@@ -16,7 +16,7 @@ import json
 from django.http import HttpResponseRedirect
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
-from .models import Profile
+from .models import Profile, TemporaryUserContact
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.exceptions import ObjectDoesNotExist
@@ -42,7 +42,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Category, Subcategory, RatingReview
 from .serializers import CategorySerializer,RatingReviewSerializer, DeliveryAddressSerializer
 from rest_framework import status
-from .models import Banner, Brand, Product, Productimg, Cart, CartItem, OrderProductImage
+from .models import Banner, Brand, Product, Productimg, Cart, CartItem, OrderProductImage, SuperAdmin
 from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer, CustomerSignupSerializer, SellerSignupSerializer, WishlistSerializer
 from django.shortcuts import get_object_or_404
 from .models import CustomerOrder, OrderItem
@@ -2197,6 +2197,15 @@ class AllOrdersView(APIView):
             product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
             product_data['delivery_date'] = item.estimated_delivery_date().strftime("%d %b %Y")
             product_data['quantity'] = item.quantity
+            product_data['address'] = [{"name": item.order.delivery_address.name,
+                                       "house_name": item.order.delivery_address.housename,
+                                       "city": item.order.delivery_address.city,
+                                       "state": item.order.delivery_address.state,
+                                       "pincode": item.order.delivery_address.pincode,
+                                       "mobile_number": item.order.delivery_address.mobile}]
+            delivery_charge = item.product.delivery_charge if item.quantity < item.product.min_order_quantity else 0
+            product_data['subtotal'] = item.quantity * item.price + delivery_charge
+            product_data['payment_type'] = item.order.payment_type
 
             response_data.append(product_data)
 
@@ -2246,6 +2255,15 @@ class PendingOrdersView(APIView):
             product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
             product_data['delivery_date'] = item.estimated_delivery_date().strftime("%d %b %Y")
             product_data['quantity'] = item.quantity
+            product_data['address'] = [{"name": item.order.delivery_address.name,
+                                       "house_name": item.order.delivery_address.housename,
+                                       "city": item.order.delivery_address.city,
+                                       "state": item.order.delivery_address.state,
+                                       "pincode": item.order.delivery_address.pincode,
+                                       "mobile_number": item.order.delivery_address.mobile}]
+            delivery_charge = item.product.delivery_charge if item.quantity < item.product.min_order_quantity else 0
+            product_data['subtotal'] = item.quantity * item.price + delivery_charge
+            product_data['payment_type'] = item.order.payment_type
 
             response_data.append(product_data)
 
@@ -2293,6 +2311,15 @@ class DeliveredOrdersView(APIView):
             product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
             product_data['delivery_date'] = item.estimated_delivery_date().strftime("%d %b %Y")
             product_data['quantity'] = item.quantity
+            product_data['address'] = [{"name": item.order.delivery_address.name if item.order.delivery_address.name else None,
+                                       "house_name": item.order.delivery_address.housename,
+                                       "city": item.order.delivery_address.city,
+                                       "state": item.order.delivery_address.state,
+                                       "pincode": item.order.delivery_address.pincode,
+                                       "mobile_number": item.order.delivery_address.mobile}]
+            delivery_charge = item.product.delivery_charge if item.quantity < item.product.min_order_quantity else 0
+            product_data['subtotal'] = item.quantity * item.price + delivery_charge
+            product_data['payment_type'] = item.order.payment_type
 
             response_data.append(product_data)
 
@@ -2491,7 +2518,7 @@ class WishlistView(APIView):
                 return Response({
                     'Status': '1',
                     'message': 'Product removed from wishlist'
-                }, status=status.HTTP_204_NO_CONTENT)
+                }, status=status.HTTP_200_OK)
             else:
                 return Response({
                     'Status': '0',
@@ -2502,3 +2529,84 @@ class WishlistView(APIView):
             'Status': '0',
             'message': 'Wishlist not found'
         }, status=status.HTTP_404_NOT_FOUND)
+    
+
+
+
+
+class SuperAdminContactView(APIView):
+    def get(self, request):
+        contacts = SuperAdmin.objects.all()
+        contact_list = []
+
+        for contact in contacts:
+            contact_list.append({
+                'purpose': contact.purpose,
+                'phone_number': contact.phone_number,
+                'content': 'This is a sample content.'
+            })
+
+        return Response({
+            'Status': '1',
+            'message': 'Success',
+            'Data': contact_list
+        }, status=status.HTTP_200_OK)
+    
+
+
+class SimpleProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    def get(self, request):
+        user = request.user
+        profile = Profile.objects.get(user=user)
+        data = {
+            "username": user.username,
+            "mobile": profile.mobile_number if profile.mobile_number else ""
+        }
+        return Response({
+            'Status': '1',
+            'message': 'Success',
+            'data': [data]
+        })
+    
+
+
+class TemporaryUserCreateView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        mobile = request.data.get('mobile_number')
+
+        # Basic validation to ensure email and mobile are provided
+        if not email or not mobile:
+            return Response({
+                'Status': '0',
+                'message': 'Email and mobile number are required.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if email or mobile already exists in TemporaryUserContact
+        if TemporaryUserContact.objects.filter(email=email).exists():
+            return Response({
+                'Status': '0',
+                'message': 'Email already exists.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if TemporaryUserContact.objects.filter(mobile_number=mobile).exists():
+            return Response({
+                'Status': '0',
+                'message': 'Mobile number already exists.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Create the temporary user contact
+            TemporaryUserContact.objects.create(email=email, mobile_number=mobile)
+        except ValidationError as e:
+            return Response({
+                'Status': '0',
+                'message': f'Validation error: {str(e)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'Status': '1',
+            'message': 'Success'
+        }, status=status.HTTP_201_CREATED)

@@ -7,7 +7,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView, PendingOrdersView, DeliveredOrdersView, CustomerBrandListView, CustomerBrandDetailView, CategoryProductSearchView, BrandProductSearchView, GetSellerOrders, WishlistView
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView, PendingOrdersView, DeliveredOrdersView, CustomerBrandListView, CustomerBrandDetailView, CategoryProductSearchView, BrandProductSearchView, GetSellerOrders, WishlistView, SuperAdminContactView, SimpleProfileView, TemporaryUserCreateView
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -119,6 +119,9 @@ urlpatterns = [
     path('get-seller-orders/', GetSellerOrders.as_view(), name='get_seller_orders'),
     path('api/wishlist/', WishlistView.as_view(), name='wishlist'),
     path('api/wishlist/<int:product_id>/', WishlistView.as_view(), name='wishlist-item'),
+    path('api/superadmin-contacts/', SuperAdminContactView.as_view(), name='superadmin-contacts'),
+    path('api/simple-profile/', SimpleProfileView.as_view(), name='superadmin-contacts'),
+    path('api/temporary-user-register/', TemporaryUserCreateView.as_view(), name='temporary-user-register'),
 ]
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
