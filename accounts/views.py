@@ -552,12 +552,12 @@ class OfferProductView(APIView):
 #             "Data": [serializer.data]
 #         })        
 class ProductDetail(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [AllowAny()]
-        return [IsAuthenticated()]
+    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [TokenAuthentication]
+    # def get_permissions(self):
+    #     if self.request.method == 'GET':
+    #         return [AllowAny()]
+    #     return [IsAuthenticated()]
     def get(self, request, product_id=None):
         try:
             if product_id is not None:
@@ -571,23 +571,23 @@ class ProductDetail(APIView):
         except Product.DoesNotExist:
             return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    def post(self, request):
-    # Extract vendor from the request
-        vendor = request.user  # Assuming the vendor is the logged-in user
+    # def post(self, request):
+    # # Extract vendor from the request
+    #     vendor = request.user  # Assuming the vendor is the logged-in user
 
-        # Create product data with the vendor set to the current user
-        product_data = request.data.copy()  # Make a copy of request.data
-        product_data['vendor'] = vendor.id  # Set vendor ID
+    #     # Create product data with the vendor set to the current user
+    #     product_data = request.data.copy()  # Make a copy of request.data
+    #     product_data['vendor'] = vendor.id  # Set vendor ID
 
-        product_serializer = ProductSerializer(data=product_data, context={'request': request})
-        if product_serializer.is_valid():
-            product = product_serializer.save()
-            images_data = request.FILES.getlist('images')
-            for image_data in images_data:
-                Productimg.objects.create(product=product, image=image_data)
-            return Response({"Status": "1", "message": "Product added successfully"}, status=status.HTTP_201_CREATED)
-        else:
-            return Response({"Status": "0", "message": "Failed to add product", "Errors": product_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    #     product_serializer = ProductSerializer(data=product_data, context={'request': request})
+    #     if product_serializer.is_valid():
+    #         product = product_serializer.save()
+    #         images_data = request.FILES.getlist('images')
+    #         for image_data in images_data:
+    #             Productimg.objects.create(product=product, image=image_data)
+    #         return Response({"Status": "1", "message": "Product added successfully"}, status=status.HTTP_201_CREATED)
+    #     else:
+    #         return Response({"Status": "0", "message": "Failed to add product", "Errors": product_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         
 
@@ -1414,6 +1414,13 @@ class ProfileUpdateView(generics.UpdateAPIView):
 
 class CustomerSignupView(APIView):
     def post(self, request):
+        email = request.data["email"]
+        try:
+            tempuser = TemporaryUserContact.objects.get(email=email)
+            if tempuser:
+                tempuser.delete()
+        except:
+            print("No data")
         serializer = CustomerSignupSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -1624,6 +1631,10 @@ class CartView(APIView):
                 'price_per_item': item.product.price,
                 'delivery_charge': item.product.delivery_charge,
                 'min_order_quantity': item.product.min_order_quantity,
+                'min_order_quantity_two': item.product.min_order_quantity_two,
+                'min_order_quantity_three': item.product.min_order_quantity_three,
+                'min_order_quantity_four': item.product.min_order_quantity_four,
+                'min_order_quantity_five': item.product.min_order_quantity_five,
                 'total_price': item.quantity * item.product.price,
                 'created_at': item.created_at,
                 'updated_at': item.updated_at
@@ -1994,7 +2005,7 @@ class Checkout(APIView):
                 "actual_price": item.product.actual_price,
                 "delivery_charge": item.product.delivery_charge
             })
-        return Response({"Status": "1", "message": "Success", "Data": data, "delivery_charge": "0.0" if sum(total_delivery_charge) == 0 else sum(total_delivery_charge), "actual_prices": sum(actual_price), "offer_price": sum(offer_price), "total_price": sum(total_price) + sum(total_delivery_charge)}, status=status.HTTP_200_OK)
+        return Response({"Status": "1", "message": "Success", "Data": data, "delivery_charge": 0.0 if sum(total_delivery_charge) == 0 else sum(total_delivery_charge), "actual_prices": sum(actual_price), "offer_price": sum(offer_price), "total_price": sum(total_price) + sum(total_delivery_charge)}, status=status.HTTP_200_OK)
     
 
 
@@ -2191,7 +2202,7 @@ class AllOrdersView(APIView):
             product_data = ProductSerializer(item.product).data
             product_data['order_number'] = item.order.order_number
             # product_data['status'] = item.order.get_status_display()
-            product_data['status'] = item.get_status_display()
+            product_data['order_status'] = item.status
             product_data['is_approved'] = item.is_approved
             product_data['delivery_from'] = item.product.vendor.profile.address if item.product.vendor else "Unknown"
             product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
@@ -2249,7 +2260,7 @@ class PendingOrdersView(APIView):
         for item in order_items:
             product_data = ProductSerializer(item.product).data
             product_data['order_number'] = item.order.order_number
-            product_data['status'] = item.get_status_display()
+            product_data['order_status'] = item.status
             product_data['is_approved'] = item.is_approved
             product_data['delivery_from'] = item.product.vendor.profile.address if item.product.vendor else "Unknown"
             product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
@@ -2305,7 +2316,7 @@ class DeliveredOrdersView(APIView):
         for item in order_items:
             product_data = ProductSerializer(item.product).data
             product_data['order_number'] = item.order.order_number
-            product_data['status'] = item.get_status_display()
+            product_data['order_status'] = item.status
             product_data['is_approved'] = item.is_approved
             product_data['delivery_from'] = item.product.vendor.profile.address if item.product.vendor else "Unknown"
             product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
@@ -2464,6 +2475,10 @@ class WishlistView(APIView):
                 'price_per_item': item.product.price,
                 'delivery_charge': item.product.delivery_charge,
                 'min_order_quantity': item.product.min_order_quantity,
+                'min_order_quantity_two': item.product.min_order_quantity_two,
+                'min_order_quantity_three': item.product.min_order_quantity_three,
+                'min_order_quantity_four': item.product.min_order_quantity_four,
+                'min_order_quantity_five': item.product.min_order_quantity_five,
                 'created_at': item.added_at
             })
 
@@ -2529,6 +2544,32 @@ class WishlistView(APIView):
             'Status': '0',
             'message': 'Wishlist not found'
         }, status=status.HTTP_404_NOT_FOUND)
+
+
+
+class WishListFromCartView(APIView):
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        product = Product.objects.filter(id=product_id).first()
+        
+        if not product:
+            return Response({
+                'Status': '0',
+                'Message': 'Product not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Get or create the user's wishlist
+        wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+
+        # Add the product to the wishlist
+        WishlistItem.objects.get_or_create(wishlist=wishlist, product=product)
+        cart_item = CartItem.objects.get(product=product)
+        cart_item.delete()
+
+        return Response({
+            'Status': '1',
+            'Message': 'Product added to wishlist'
+        }, status=status.HTTP_201_CREATED)
     
 
 
@@ -2610,3 +2651,34 @@ class TemporaryUserCreateView(APIView):
             'Status': '1',
             'message': 'Success'
         }, status=status.HTTP_201_CREATED)
+
+
+    
+class ProductMinimumQuantityView(APIView):
+    def get(self, request):
+        try:
+            product_id = request.data["product_id"]
+            try:
+                product = Product.objects.get(id=product_id)
+            except:
+                return Response({
+                    'Status': '0',
+                    'message': 'No product found'
+                })
+            data = [{
+                "product.min_order_quantity": product.min_order_quantity,
+                "product.min_order_quantity_two": product.min_order_quantity_two,
+                "product.min_order_quantity_three": product.min_order_quantity_three,
+                "product.min_order_quantity_four": product.min_order_quantity_four,
+                "product.min_order_quantity_five": product.min_order_quantity_five
+            }]
+            return Response({
+                "Status": '1',
+                "message": 'Success',
+                "data": data
+            })
+        except:
+            return Response({
+                "Status": '0',
+                "message": 'You have to provide product id'
+            })

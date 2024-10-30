@@ -191,6 +191,10 @@ class Product(models.Model):
     # image = models.ImageField(upload_to='products/', blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     min_order_quantity = models.IntegerField(default=50)
+    min_order_quantity_two = models.IntegerField(default=100)
+    min_order_quantity_three = models.IntegerField(default=150)
+    min_order_quantity_four = models.IntegerField(default=200)
+    min_order_quantity_five = models.IntegerField(default=250)
     delivery_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
     product_rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
@@ -297,12 +301,12 @@ class CustomerOrder(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(CustomerOrder, related_name='items', on_delete=models.CASCADE)
     STATUS_CHOICES = [
-        ('Ordered', 'Ordered'),
+        ('Ordered', 'Ordered'),## ordered_confirmed
         ('Shipped', 'Shipped'),
         ('Delivered', 'Delivered'),
         ('CANCELLED', 'Cancelled'),
     ]
-    status = models.CharField(max_length=50, choices=[('1', 'Ordered'), ('2', 'Shipped'), ('3', 'Delivered')], default='1')
+    status = models.CharField(max_length=50, choices=[('0', 'Ordered'), ('1', 'Shipped'), ('2', 'Delivered')], default='1')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     is_approved = models.BooleanField(default=False)
     quantity = models.IntegerField()

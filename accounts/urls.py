@@ -7,7 +7,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView, PendingOrdersView, DeliveredOrdersView, CustomerBrandListView, CustomerBrandDetailView, CategoryProductSearchView, BrandProductSearchView, GetSellerOrders, WishlistView, SuperAdminContactView, SimpleProfileView, TemporaryUserCreateView
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView, PendingOrdersView, DeliveredOrdersView, CustomerBrandListView, CustomerBrandDetailView, CategoryProductSearchView, BrandProductSearchView, GetSellerOrders, WishlistView, SuperAdminContactView, SimpleProfileView, TemporaryUserCreateView, WishListFromCartView, ProductMinimumQuantityView
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -54,10 +54,11 @@ urlpatterns = [
     path('addBrand/', AddBrandView.as_view(), name='add-brand'),
     path('getTrendingBrands/', TrendingBrandsView.as_view(), name='get-trending-brands'),
     path('getOfferProducts/', OfferProductView.as_view(), name='get-offer-products'),
-    path('getProductDetails/<int:product_id>/', ProductDetail.as_view(), name='get-product-by-id'),
-    path('getProductDetails/', ProductDetail.as_view(), name='get-product-details'),
+    # path('getProductDetails/<int:product_id>/', ProductDetail.as_view(), name='get-product-by-id'),
+    # path('getProductDetails/', ProductDetail.as_view(), name='get-product-details'),
     path('getAllProducts/', ProductDetail.as_view(), name='get-all-products'),
-    path('addProduct/', ProductDetail.as_view(), name='add-product'),
+    path('getAllProducts/<int:product_id>/', ProductDetail.as_view(), name='get-product-by-id'),
+    # path('addProduct/', ProductDetail.as_view(), name='add-product'),
     # path('getSearchedProducts/', ProductSearchView.as_view(), name='get-searched-products'),  ---- commented because created new endpoints at the end.
     path('reviews/', RatingReviewListCreate.as_view(), name='review_list_create'),
     path('reviews/<int:pk>/', RatingReviewDetail.as_view(), name='review_detail'),
@@ -119,9 +120,11 @@ urlpatterns = [
     path('get-seller-orders/', GetSellerOrders.as_view(), name='get_seller_orders'),
     path('api/wishlist/', WishlistView.as_view(), name='wishlist'),
     path('api/wishlist/<int:product_id>/', WishlistView.as_view(), name='wishlist-item'),
+    path('api/cart-wishlist/', WishListFromCartView.as_view(), name='cart-wishlist'),
     path('api/superadmin-contacts/', SuperAdminContactView.as_view(), name='superadmin-contacts'),
     path('api/simple-profile/', SimpleProfileView.as_view(), name='superadmin-contacts'),
     path('api/temporary-user-register/', TemporaryUserCreateView.as_view(), name='temporary-user-register'),
+    path('api/product-minimum-quantity/', ProductMinimumQuantityView.as_view(), name='product-minimum-quantity'),
 ]
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
