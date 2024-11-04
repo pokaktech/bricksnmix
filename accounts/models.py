@@ -7,6 +7,7 @@ from django.utils.text import slugify
 from .utils import code_generator, create_shortcode
 from datetime import timedelta
 from django.utils.timezone import now
+import uuid
 
 
 
@@ -216,10 +217,17 @@ class Product(models.Model):
         return self.name    
     
 class Cart(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    # session_id = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
+    session_id = models.CharField(max_length=40, unique=True, null=True, blank=True)
+
     # product = models.ForeignKey(Product, on_delete=models.CASCADE)
     # quantity = models.IntegerField(default=1)
-  
+    def __str__(self):
+        return f"Cart - {self.user if self.user else self.session_id}"
+
+        
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)

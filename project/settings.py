@@ -13,7 +13,11 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 
 import os
-from django.utils.translation import ugettext_lazy as _
+# from django.utils.translation import ugettext_lazy as _
+# from django.utils.translation import gettext_lazy as _
+
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -33,7 +37,7 @@ DEBUG = True
 # ALLOWED_HOSTS = ["*", "572d-156-209-45-224.ngrok.io",
 #                  "www.572d-156-209-45-224.ngrok.io", "127.0.0.1", "127.0.0.1:8000"]
 
-ALLOWED_HOSTS = ['195.35.20.1', '*']
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -47,6 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     # 'django.contrib.sites',
     'allauth',
     'allauth.account',
@@ -94,11 +99,23 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'allauth.account.middleware.AccountMiddleware', 
+    'allauth.account.middleware.AccountMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+# SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+# SESSION_COOKIE_SAMESITE = None
+# SESSION_COOKIE_DOMAIN = None
+CSRF_COOKIE_SECURE = False
+
+
+# SESSION_COOKIE_HTTPONLY = True
+# SESSION_COOKIE_SECURE = False  
+CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
+    'http://localhost:8000',
 ]
 
 # CORS_ALLOW_HEADERS = ['*']
@@ -169,6 +186,17 @@ REST_FRAMEWORK = {
 WSGI_APPLICATION = 'project.wsgi.application'
 
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+
+
+
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
@@ -189,6 +217,9 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+ASGI_APPLICATION = 'project.asgi.application'  # replace 'myproject' with your project name
+
 
 # DATABASES = {
 #     'default': {

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Profile,BankAccount ,SocialLink, Product, Category, Subcategory, CustomerOrder, OrderItem, DeliveryAddress, Brand, Banner, Productimg, OrderProductImage, SuperAdmin, TemporaryUserContact
+from .models import Profile,BankAccount ,SocialLink, Product, Category, Subcategory, CustomerOrder, OrderItem, DeliveryAddress, Brand, Banner, Productimg, OrderProductImage, SuperAdmin, TemporaryUserContact, Cart, CartItem
 # Register your models here.
 
 class ProfileAdmin(admin.ModelAdmin):
@@ -38,7 +38,7 @@ class SocialLinkAdmin(admin.ModelAdmin):
     list_per_page = 10    
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'price', 'offer_percent', 'brand', 'actual_price', 'product_rating', 'stock')
+    list_display = ('id', 'name', 'category', 'price', 'offer_percent', 'brand', 'actual_price', 'product_rating', 'stock')
     list_filter = ('category', 'price', 'product_rating', 'brand')
     search_fields = ('name', 'description')
     ordering = ('-price',)
@@ -68,3 +68,5 @@ admin.site.register(DeliveryAddress)
 admin.site.register(Brand)
 admin.site.register(Banner)
 admin.site.register(TemporaryUserContact)
+admin.site.register(Cart)
+admin.site.register(CartItem)
