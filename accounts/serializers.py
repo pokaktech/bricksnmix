@@ -105,11 +105,12 @@ class ProductimgSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     product_images = ProductimgSerializer(many=True, required=False)
+    wishlisted = serializers.SerializerMethodField()
     # image = serializers.ImageField(required=False)
     
     class Meta:
         model = Product
-        fields = ['id', 'vendor', 'category', 'subcategory', 'brand', 'name', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'stock_status', 'min_order_quantity', 'min_order_quantity_two', 'min_order_quantity_three', 'min_order_quantity_four', 'min_order_quantity_five', 'delivery_charge', 'product_images', 'created_at', 'updated_at']
+        fields = ['id', 'vendor', 'category', 'subcategory', 'brand', 'name', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'stock_status', 'min_order_quantity', 'min_order_quantity_two', 'min_order_quantity_three', 'min_order_quantity_four', 'min_order_quantity_five', 'delivery_charge', 'product_images', 'wishlisted', 'created_at', 'updated_at']
         read_only_fields = ['price', 'product_rating', 'created_at', 'updated_at']
 
     def create(self, validated_data):
@@ -132,6 +133,28 @@ class ProductSerializer(serializers.ModelSerializer):
                 Productimg.objects.create(product=instance, image=image_data)
         
         return instance
+    
+    def get_wishlisted(self, obj):
+        request = self.context.get('request')
+        if request is None:
+            return False
+
+        user = request.user if request.user.is_authenticated else None
+        session_id = request.session.session_key
+
+        # Check if the product is wishlisted for authenticated users
+        if user:
+            wishlist = Wishlist.objects.filter(user=user).first()
+        else:
+            # Check by session ID if the user is not authenticated
+            wishlist = Wishlist.objects.filter(session_id=session_id).first()
+
+        # If a wishlist exists, check if the product is in it
+        if wishlist:
+            return WishlistItem.objects.filter(wishlist=wishlist, product=obj).exists()
+
+        return False
+
     
 class RatingReviewSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')

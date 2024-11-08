@@ -526,7 +526,7 @@ class OfferProductView(APIView):
     permission_classes = [AllowAny]
     def get(self, request, format=None):
         products = Product.objects.filter(offer_percent__gt=0, stock__gt=0)
-        serializer = ProductSerializer(products, many=True)
+        serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response({
             "Status": "1",
             "message": "Success",
@@ -562,11 +562,11 @@ class ProductDetail(APIView):
         try:
             if product_id is not None:
                 product = Product.objects.get(id=product_id)
-                serializer = ProductSerializer(product)
+                serializer = ProductSerializer(product, context={'request': request})
                 return Response({'Status': '1', 'message': 'Success', 'Data': [serializer.data]}, status=status.HTTP_200_OK)
             else:
                 products = Product.objects.filter(stock__gt=0)
-                serializer = ProductSerializer(products, many=True)
+                serializer = ProductSerializer(products, many=True, context={'request': request})
                 return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data}, status=status.HTTP_200_OK)
         except Product.DoesNotExist:
             return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -1484,7 +1484,7 @@ class FastMovingProductsAPIView(APIView):
         ).order_by('-total_sales')[:10]  # Top 10 fast-moving products
 
         # Serialize the products (assuming you have a ProductSerializer)
-        serializer = ProductSerializer(fast_moving_products, many=True)
+        serializer = ProductSerializer(fast_moving_products, many=True, context={'request': request})
         return Response({"Status": "1", "message": "Success", "Data": serializer.data})
     
 
