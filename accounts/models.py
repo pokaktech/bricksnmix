@@ -199,8 +199,8 @@ class Product(models.Model):
     delivery_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
     product_rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
-    stock = models.IntegerField(default=0)
-    stock_status = models.BooleanField(default=False)
+    stock = models.IntegerField(default=50)
+    stock_status = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=now)  # Auto-set when created
     updated_at = models.DateTimeField(auto_now=True)  # Auto-update on save
     # images = models.JSONField(blank=True,null=True)
@@ -211,6 +211,12 @@ class Product(models.Model):
             self.stock_status = False
         # else:
         #     self.stock_status = True
+
+        if self.actual_price and self.offer_percent:
+            discount_amount = (self.actual_price * self.offer_percent) / 100
+            self.price = self.actual_price - discount_amount
+        else:
+            self.price = self.actual_price  # No discount if offer_percent is None or 0
         super(Product, self).save(*args, **kwargs)
     
     def __str__(self):

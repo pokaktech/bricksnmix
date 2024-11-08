@@ -1369,16 +1369,16 @@ class CustomAuthToken(ObtainAuthToken):
         
     def merge_cart(self, user):
         session_id = self.request.session.session_key
-        anonymous_cart = Cart.objects.filter(session_id=session_id).first()
+        anonymous_cart = Cart.objects.filter(session_id=session_id, user=None).first()
 
         if anonymous_cart:
             user_cart, _ = Cart.objects.get_or_create(user=user)
 
             # Move items from the anonymous cart to the user's cart
             for item in CartItem.objects.filter(cart=anonymous_cart):
-                cart_item, _ = CartItem.objects.get_or_create(cart=user_cart, product=item.product)
-                cart_item.quantity += item.quantity
-                # cart_item.quantity = item.quantity + 1 if item.quantity == 1 else item.quantity
+                cart_item, cart_created = CartItem.objects.get_or_create(cart=user_cart, product=item.product)
+                # cart_item.quantity += item.quantity
+                cart_item.quantity = item.quantity if cart_created else cart_item.quantity + item.quantity
                 cart_item.save()
 
             anonymous_cart.delete()
@@ -1564,9 +1564,6 @@ class ProductView(APIView):
         product_serializer = ProductSerializer(data=product_data, context={'request': request})
         if product_serializer.is_valid():
             product = product_serializer.save()
-            # images_data = request.FILES.getlist('images')
-            # for image_data in images_data:
-                # Productimg.objects.create(product=product, image=image_data)
             # Return full product data after creation
             response_serializer = ProductSerializer(product)
             return Response({
@@ -2705,153 +2702,6 @@ class ProductMinimumQuantityView(APIView):
 
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class CartView(APIView):
-    permission_classes = [AllowAny]  # Allow access to unauthenticated users
-
-    def get(self, request):
-        # Check if the user is authenticated
-        user = request.user if request.user.is_authenticated else None
-
-        # Get the cart based on user or session
-        if user:
-            cart = Cart.objects.filter(user=user).first()
-            print("User with Cart")
-        else:
-            session_id = request.session.session_key  # Get the session key
-            cart = Cart.objects.filter(session_id=session_id).first()
-            print(request.session.session_key)
-
-        if not cart:
-            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        cart_items = CartItem.objects.filter(cart=cart)
-
-        # Prepare the cart items data
-        items = []
-        for item in cart_items:
-            product_images = Productimg.objects.filter(product=item.product).values_list('image', flat=True)
-            product_image = product_images[0] if product_images else None
-            # items.append({
-            #     'product_id': item.product.id,
-            #     'product_name': item.product.name,
-            #     'product_images': f"/media/{product_image}" if product_image else None,
-            #     'quantity': item.quantity,
-            #     'price_per_item': item.product.price,
-            #     'total_price': item.quantity * item.product.price,
-            # })
-            items.append({
-                'product_id': item.product.id,
-                'product_name': item.product.name,
-                'product_images': f"/media/{product_image}" if product_image != None else None,
-                'quantity': item.quantity,
-                'price_per_item': item.product.price,
-                'delivery_charge': item.product.delivery_charge,
-                'min_order_quantity': item.product.min_order_quantity,
-                'min_order_quantity_two': item.product.min_order_quantity_two,
-                'min_order_quantity_three': item.product.min_order_quantity_three,
-                'min_order_quantity_four': item.product.min_order_quantity_four,
-                'min_order_quantity_five': item.product.min_order_quantity_five,
-                'total_price': item.quantity * item.product.price,
-                'created_at': item.created_at,
-                'updated_at': item.updated_at
-            })
-
-        return Response({
-            'Status': '1',
-            'cart_id': cart.id,
-            'total_items': len(items),
-            'items': items,
-        }, status=status.HTTP_200_OK)  
-
-
-
-    def post(self, request):
-        product_id = request.data.get('product_id')
-        quantity = request.data.get('quantity')
-        session_id = request.session.session_key  # Get the session key
-
-        if not product_id:
-            return Response({'Status': '0', 'message': 'Product ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Retrieve or create the cart based on user or session
-        user = request.user if request.user.is_authenticated else None
-        if user:
-            cart, created = Cart.objects.get_or_create(user=user)
-        else:
-            # Get or create a cart using session ID without creating a new one if it already exists
-            cart, created = Cart.objects.get_or_create(session_id=session_id)
-
-        # Retrieve the product
-        try:
-            product = Product.objects.get(id=product_id)
-        except Product.DoesNotExist:
-            return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        # quantity = quantity
-
-        if product.stock < quantity:
-            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
-
-        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-
-        if created:
-            cart_item.quantity = quantity
-        else:
-            if cart_item.quantity + quantity > product.stock:
-                return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
-            cart_item.quantity += quantity
-
-        cart_item.save()
-
-        # Update the product stock
-        product.stock -= quantity
-        product.save()
-
-        return Response({"Status": "1", "message": "Product added to cart successfully"}, status=status.HTTP_201_CREATED)
-
-
-    def delete(self, request):
-        product_id = request.data.get('product_id')
-        session_id = request.session.session_key  # Get the session key
-
-        if not product_id:
-            return Response({'Status': '0', 'message': 'Product ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Retrieve the cart based on user or session
-        user = request.user if request.user.is_authenticated else None
-        cart = Cart.objects.filter(user=user).first() if user else Cart.objects.filter(session_id=session_id).first()
-
-        if not cart:
-            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        try:
-            cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
-        except CartItem.DoesNotExist:
-            return Response({'Status': '0', 'message': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        cart_item.delete()
-
-        return Response({"Status": "1", "message": "Item removed from cart successfully"}, status=status.HTTP_200_OK)
-
-    def merge_cart(self, user):
-        session_id = self.request.session.session_key
-        # Get the anonymous cart
-        anonymous_cart = Cart.objects.filter(session_id=session_id).first()
-
-        if anonymous_cart:
-            # Get or create the user's cart
-            user_cart, created = Cart.objects.get_or_create(user=user)
-
-            # Move items from the anonymous cart to the user's cart
-            for item in CartItem.objects.filter(cart=anonymous_cart):
-                cart_item, _ = CartItem.objects.get_or_create(cart=user_cart, product=item.product)
-                cart_item.quantity += item.quantity
-                cart_item.save()
-
-            # Delete the anonymous cart
-            anonymous_cart.delete()
-
 
 
 class UpdateCart(APIView):
@@ -2891,12 +2741,12 @@ class UpdateCart(APIView):
             return Response({'Status': '0', 'message': 'Cart item not found'}, status=status.HTTP_404_NOT_FOUND)
 
         # Validate stock availability
-        if product.stock + cart_item.quantity < int(quantity):
-            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+        # if product.stock + cart_item.quantity < int(quantity):
+            # return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Adjust the stock
-        product.stock += cart_item.quantity - int(quantity)
-        product.save()
+        # product.stock += cart_item.quantity - int(quantity)
+        # product.save()
 
         # Update the cart item quantity
         cart_item.quantity = int(quantity)
@@ -2980,10 +2830,12 @@ class CartView(APIView):
 
         # Initialize session if not set
         if not request.session.session_key:
+            print("Nooooooo")
             request.session['initialized'] = True
             request.session.save()
 
         session_id = request.session.session_key  # Get the session key
+        print(session_id)
         cart, created = Cart.objects.get_or_create(user=user) if user else Cart.objects.get_or_create(session_id=session_id)
 
         # Retrieve the product
@@ -2992,23 +2844,23 @@ class CartView(APIView):
         except Product.DoesNotExist:
             return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if product.stock < quantity:
-            return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+        # if product.stock < quantity:
+        #     return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
 
         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
 
         if created:
             cart_item.quantity = quantity
         else:
-            if cart_item.quantity + quantity > product.stock:
-                return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+            # if cart_item.quantity + quantity > product.stock:
+                # return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
             cart_item.quantity += quantity
 
         cart_item.save()
 
         # Update the product stock
-        product.stock -= quantity
-        product.save()
+        # product.stock -= quantity
+        # product.save()
 
         return Response({"Status": "1", "message": "Product added to cart successfully"}, status=status.HTTP_201_CREATED)
 
