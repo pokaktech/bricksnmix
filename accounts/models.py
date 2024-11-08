@@ -13,8 +13,10 @@ import uuid
 
 
 class TemporaryUserContact(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True)
     email = models.EmailField(unique=True)
     mobile_number = models.CharField(max_length=15, unique=True)
+    session_id = models.CharField(max_length=40, unique=True, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -240,6 +242,12 @@ class CartItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(default=now)  # Auto-set when created
     updated_at = models.DateTimeField(auto_now=True)  # Auto-update on save
+
+    def __str__(self):
+        if self.cart.user:
+            return f"{self.product.name} in {self.cart.user.username}'s Cart"
+        else:
+            return f"{self.product.name} in {self.cart.session_id}'s Cart"
            
 class Productimg(models.Model):
     product = models.ForeignKey(Product, related_name='product_images', on_delete=models.CASCADE)
@@ -346,10 +354,12 @@ class OrderProductImage(models.Model):
         return f"Image for {self.order_item.product.name}"
     
 class Wishlist(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True)
+    user = models.OneToOneField(User, null=True, blank=True, on_delete=models.CASCADE)
+    session_id = models.CharField(max_length=40, unique=True, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.user.username}'s Wishlist"
+        return f"Wishlist - {self.user if self.user else self.session_id}"
 
 class WishlistItem(models.Model):
     wishlist = models.ForeignKey(Wishlist, related_name='items', on_delete=models.CASCADE)
@@ -357,7 +367,10 @@ class WishlistItem(models.Model):
     added_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.product.name} in {self.wishlist.user.username}'s Wishlist"
+        if self.wishlist.user:
+            return f"{self.product.name} in {self.wishlist.user.username}'s Wishlist"
+        else:
+            return f"{self.product.name} in {self.wishlist.session_id}'s Wishlist"
 
 
 

@@ -1349,6 +1349,7 @@ class CustomAuthToken(ObtainAuthToken):
         data = {"access": token.key, "user_type": user_type, "user_name": user.username, "email": user.email}
         if user_type == "customer":
             self.merge_cart(user)
+            self.merge_wishlist(user)
             try:
                 cart = Cart.objects.get(user=user)
                 cart_items = CartItem.objects.filter(cart=cart).count()
@@ -1383,6 +1384,21 @@ class CustomAuthToken(ObtainAuthToken):
 
             anonymous_cart.delete()
 
+    def merge_wishlist(self, user):
+        session_id = self.request.session.session_key
+        anonymous_wishlist = Wishlist.objects.filter(session_id=session_id, user=None).first()
+
+        if anonymous_wishlist:
+            user_wishlist, _ = Wishlist.objects.get_or_create(user=user)
+
+            # Move items from the anonymous cart to the user's cart
+            for item in WishlistItem.objects.filter(wishlist=anonymous_wishlist):
+                wishlist_item, wishlist_created = WishlistItem.objects.get_or_create(wishlist=user_wishlist, product=item.product)
+                # cart_item.quantity += item.quantity
+                # cart_item.quantity = item.quantity if cart_created else cart_item.quantity + item.quantity
+                # cart_item.save()
+
+            anonymous_wishlist.delete()
 
 class LogoutView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -2609,62 +2625,62 @@ class SuperAdminContactView(APIView):
     
 
 
-class SimpleProfileView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
-    def get(self, request):
-        user = request.user
-        profile = Profile.objects.get(user=user)
-        data = {
-            "username": user.username,
-            "mobile": profile.mobile_number if profile.mobile_number else ""
-        }
-        return Response({
-            'Status': '1',
-            'message': 'Success',
-            'data': [data]
-        })
+# class SimpleProfileView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [TokenAuthentication]
+#     def get(self, request):
+#         user = request.user
+#         profile = Profile.objects.get(user=user)
+#         data = {
+#             "username": user.username,
+#             "mobile": profile.mobile_number if profile.mobile_number else ""
+#         }
+#         return Response({
+#             'Status': '1',
+#             'message': 'Success',
+#             'data': [data]
+#         })
     
 
 
-class TemporaryUserCreateView(APIView):
-    def post(self, request):
-        email = request.data.get('email')
-        mobile = request.data.get('mobile_number')
+# class TemporaryUserCreateView(APIView):
+#     def post(self, request):
+#         email = request.data.get('email')
+#         mobile = request.data.get('mobile_number')
 
-        # Basic validation to ensure email and mobile are provided
-        if not email or not mobile:
-            return Response({
-                'Status': '0',
-                'message': 'Email and mobile number are required.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+#         # Basic validation to ensure email and mobile are provided
+#         if not email or not mobile:
+#             return Response({
+#                 'Status': '0',
+#                 'message': 'Email and mobile number are required.'
+#             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if email or mobile already exists in TemporaryUserContact
-        if TemporaryUserContact.objects.filter(email=email).exists():
-            return Response({
-                'Status': '0',
-                'message': 'Email already exists.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+#         # Check if email or mobile already exists in TemporaryUserContact
+#         if TemporaryUserContact.objects.filter(email=email).exists():
+#             return Response({
+#                 'Status': '0',
+#                 'message': 'Email already exists.'
+#             }, status=status.HTTP_400_BAD_REQUEST)
 
-        if TemporaryUserContact.objects.filter(mobile_number=mobile).exists():
-            return Response({
-                'Status': '0',
-                'message': 'Mobile number already exists.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+#         if TemporaryUserContact.objects.filter(mobile_number=mobile).exists():
+#             return Response({
+#                 'Status': '0',
+#                 'message': 'Mobile number already exists.'
+#             }, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            # Create the temporary user contact
-            TemporaryUserContact.objects.create(email=email, mobile_number=mobile)
-        except ValidationError as e:
-            return Response({
-                'Status': '0',
-                'message': f'Validation error: {str(e)}'
-            }, status=status.HTTP_400_BAD_REQUEST)
+#         try:
+#             # Create the temporary user contact
+#             TemporaryUserContact.objects.create(email=email, mobile_number=mobile)
+#         except ValidationError as e:
+#             return Response({
+#                 'Status': '0',
+#                 'message': f'Validation error: {str(e)}'
+#             }, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({
-            'Status': '1',
-            'message': 'Success'
-        }, status=status.HTTP_201_CREATED)
+#         return Response({
+#             'Status': '1',
+#             'message': 'Success'
+#         }, status=status.HTTP_201_CREATED)
 
 
     
@@ -2903,3 +2919,217 @@ class CartView(APIView):
 
             # Delete the anonymous cart
             anonymous_cart.delete()
+
+
+
+
+
+class WishlistView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        user = request.user if request.user.is_authenticated else None
+
+
+         # Check if the session is initialized
+        if not request.session.session_key:
+            request.session['initialized'] = True  # Initialize the session
+            request.session.save()  # Save to create a session ID
+
+        session_id = request.session.session_key  # Get the session key
+        wishlist, created = Wishlist.objects.get_or_create(user=user) if user else Wishlist.objects.get_or_create(session_id=session_id)
+
+        wishlist_items = WishlistItem.objects.filter(wishlist=wishlist)
+
+        # Prepare the cart items data
+        items = []
+        for item in wishlist_items:
+            product_images = Productimg.objects.filter(product=item.product).values_list('image', flat=True)  # Get all product images
+            product_image = product_images[0] if product_images else None  # Choose the first image or None if no image
+            items.append({
+                'product_id': item.product.id,
+                'product_name': item.product.name,
+                'product_images': f"/media/{product_image}" if product_image != None else None,
+                'price_per_item': item.product.price,
+                'delivery_charge': item.product.delivery_charge,
+                'min_order_quantity': item.product.min_order_quantity,
+                'min_order_quantity_two': item.product.min_order_quantity_two,
+                'min_order_quantity_three': item.product.min_order_quantity_three,
+                'min_order_quantity_four': item.product.min_order_quantity_four,
+                'min_order_quantity_five': item.product.min_order_quantity_five,
+                'created_at': item.added_at
+            })
+
+        return Response({
+            'Status': '1',
+            'wishlist_id': wishlist.id,
+            'total_items': len(items),
+            'items': items,
+        }, status=status.HTTP_200_OK)
+
+    
+
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        product = Product.objects.filter(id=product_id).first()
+        user = request.user if request.user.is_authenticated else None
+
+        if not request.session.session_key:
+            request.session['initialized'] = True  # Initialize the session
+            request.session.save()  # Save to create a session ID
+        
+        if not product:
+            return Response({
+                'Status': '0',
+                'Message': 'Product not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Get or create the user's wishlist
+
+        session_id = request.session.session_key  # Get the session key
+        wishlist, created = Wishlist.objects.get_or_create(user=user) if user else Wishlist.objects.get_or_create(session_id=session_id)
+
+        # Add the product to the wishlist
+        WishlistItem.objects.get_or_create(wishlist=wishlist, product=product)
+
+        return Response({
+            'Status': '1',
+            'Message': 'Product added to wishlist'
+        }, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, product_id):
+        # Get the user's wishlist
+        wishlist = Wishlist.objects.filter(user=request.user).first()
+
+        if wishlist:
+            wishlist_item = WishlistItem.objects.filter(wishlist=wishlist, product_id=product_id).first()
+            if wishlist_item:
+                wishlist_item.delete()
+                return Response({
+                    'Status': '1',
+                    'message': 'Product removed from wishlist'
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'Status': '0',
+                    'message': 'Product not in wishlist'
+                }, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response({
+            'Status': '0',
+            'message': 'Wishlist not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+
+
+
+class WishListFromCartView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        product = Product.objects.filter(id=product_id).first()
+        user = request.user if request.user.is_authenticated else None
+
+        if not request.session.session_key:
+            request.session['initialized'] = True  # Initialize the session
+            request.session.save()  # Save to create a session ID
+        
+        if not product:
+            return Response({
+                'Status': '0',
+                'Message': 'Product not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Get or create the user's wishlist
+
+        session_id = request.session.session_key  # Get the session key
+        wishlist, created = Wishlist.objects.get_or_create(user=user) if user else Wishlist.objects.get_or_create(session_id=session_id)
+
+        # Add the product to the wishlist
+        WishlistItem.objects.get_or_create(wishlist=wishlist, product=product)
+        try:
+            cart = Cart.objects.get(user=user) if user else Cart.objects.get(session_id=session_id)
+            cart_item = CartItem.objects.get(cart=cart, product=product)
+            cart_item.delete()
+        except:
+            pass
+
+        return Response({
+            'Status': '1',
+            'Message': 'Product added to wishlist'
+        }, status=status.HTTP_201_CREATED)
+    
+
+
+class SimpleProfileView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        user = request.user if request.user.is_authenticated else None
+        if not request.session.session_key:
+            request.session['initialized'] = True  # Initialize the session
+            request.session.save()
+        session_id = request.session.session_key
+        if user:
+            profile = Profile.objects.get(user=user)
+            data = {
+                "username": user.username,
+                "mobile": profile.mobile_number if profile.mobile_number else ""
+            }
+        else:
+            temp_details = TemporaryUserContact.objects.get(session_id=session_id)
+            data = {
+                "username": temp_details.email,
+                "mobile": temp_details.mobile_number
+            }
+        
+        return Response({
+            'Status': '1',
+            'message': 'Success',
+            'data': [data]
+        })
+    
+
+
+class TemporaryUserCreateView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        mobile = request.data.get('mobile_number')
+
+        if not request.session.session_key:
+            request.session['initialized'] = True  # Initialize the session
+            request.session.save()
+        session_id = request.session.session_key
+
+        # Basic validation to ensure email and mobile are provided
+        if not email or not mobile:
+            return Response({
+                'Status': '0',
+                'message': 'Email and mobile number are required.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if email or mobile already exists in TemporaryUserContact
+        if TemporaryUserContact.objects.filter(email=email).exists():
+            return Response({
+                'Status': '1',
+                'message': 'Success'
+            }, status=status.HTTP_200_OK)
+
+        if TemporaryUserContact.objects.filter(mobile_number=mobile).exists():
+            return Response({
+                'Status': '1',
+                'message': 'Success'
+            }, status=status.HTTP_200_OK)
+
+        try:
+            # Create the temporary user contact
+            TemporaryUserContact.objects.create(email=email, mobile_number=mobile, session_id=session_id)
+        except ValidationError as e:
+            return Response({
+                'Status': '0',
+                'message': f'Validation error: {str(e)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'Status': '1',
+            'message': 'Success'
+        }, status=status.HTTP_201_CREATED)
