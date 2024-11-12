@@ -563,10 +563,12 @@ class ProductDetail(APIView):
             if product_id is not None:
                 product = Product.objects.get(id=product_id)
                 serializer = ProductSerializer(product, context={'request': request})
+                # print("---------------", serializer.data)
                 return Response({'Status': '1', 'message': 'Success', 'Data': [serializer.data]}, status=status.HTTP_200_OK)
             else:
                 products = Product.objects.filter(stock__gt=0)
                 serializer = ProductSerializer(products, many=True, context={'request': request})
+                # print("---------------", serializer.data)
                 return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data}, status=status.HTTP_200_OK)
         except Product.DoesNotExist:
             return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -1871,7 +1873,7 @@ class DeliveryAddressDetailView(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         # Ensure that users can only interact with their own addresses
-        return DeliveryAddress.objects.filter(user=self.request.user).order_by('-is_default', '-id')
+        return DeliveryAddress.objects.filter(user=self.request.user)
 
     def get_object(self):
         # Retrieve the address and check if it belongs to the current user
@@ -2270,20 +2272,20 @@ class PendingOrdersView(APIView):
 
         if not orders.exists():
             return Response({
-                'Status': '0',
+                'Status': '1',
                 'message': 'No delivered orders found for this user',
                 'Data': []
-            }, status=status.HTTP_404_NOT_FOUND)
+            }, status=status.HTTP_200_OK)
 
         # Get all the order items related to the user's orders
         order_items = OrderItem.objects.filter(order__in=orders, is_approved=False)
 
         if not order_items.exists():
             return Response({
-                'Status': '0',
+                'Status': '1',
                 'message': 'No products found for this user',
                 'Data': []
-            }, status=status.HTTP_404_NOT_FOUND)
+            }, status=status.HTTP_200_OK)
 
         # Prepare response data
         response_data = []
@@ -2326,20 +2328,21 @@ class DeliveredOrdersView(APIView):
 
         if not orders.exists():
             return Response({
-                'Status': '0',
+                'Status': '1',
                 'message': 'No delivered orders found for this user',
                 'Data': []
-            }, status=status.HTTP_404_NOT_FOUND)
+            }, status=status.HTTP_200_OK)
 
         # Get all the order items related to the user's orders
-        order_items = OrderItem.objects.filter(order__in=orders, status="3", is_approved=True)
+        order_items = OrderItem.objects.filter(order__in=orders, status="2", is_approved=True)
+        print("ppppp", order_items)
 
         if not order_items.exists():
             return Response({
-                'Status': '0',
+                'Status': '1',
                 'message': 'No products found for this user',
                 'Data': []
-            }, status=status.HTTP_404_NOT_FOUND)
+            }, status=status.HTTP_200_OK)
 
         # Prepare response data
         response_data = []
@@ -2462,7 +2465,7 @@ class GetSellerOrders(APIView):
         try:
             # If a specific product ID is provided, fetch the product and check if it belongs to the seller
             order_items = OrderItem.objects.filter(product__vendor=user)
-            print("dsadd",order_items[0].product)
+            # print("dsadd",order_items[0].product)
             # else:
             #     # Fetch all products related to the vendor (seller)
             # serializer = ProductSerializer(products, many=True)
@@ -2800,9 +2803,10 @@ class CartView(APIView):
 
     def get(self, request):
         user = request.user if request.user.is_authenticated else None
-
+        print("old sessionid", request.session.session_key)
         # Check if the session is initialized
         if not request.session.session_key:
+            print("new sessionid created")
             request.session['initialized'] = True  # Initialize the session
             request.session.save()  # Save to create a session ID
 
@@ -2810,7 +2814,7 @@ class CartView(APIView):
         cart = Cart.objects.filter(user=user).first() if user else Cart.objects.filter(session_id=session_id).first()
 
         if not cart:
-            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'Status': '0', 'message': 'Cart not found'}, status=status.HTTP_200_OK)
 
         cart_items = CartItem.objects.filter(cart=cart)
 
@@ -2838,6 +2842,7 @@ class CartView(APIView):
     def post(self, request):
         product_id = request.data.get('product_id')
         quantity = request.data.get('quantity')
+        print("old sessionid", request.session.session_key)
 
         if not product_id or not quantity:
             return Response({'Status': '0', 'message': 'Product ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -2999,8 +3004,10 @@ class WishlistView(APIView):
 
     def delete(self, request, product_id):
         # Get the user's wishlist
-        wishlist = Wishlist.objects.filter(user=request.user).first()
-
+        # wishlist = Wishlist.objects.filter(user=request.user).first()
+        user = request.user if request.user.is_authenticated else None
+        session_id = request.session.session_key  # Get the session key
+        wishlist = Wishlist.objects.filter(user=user).first() if user else Wishlist.objects.filter(session_id=session_id).first()
         if wishlist:
             wishlist_item = WishlistItem.objects.filter(wishlist=wishlist, product_id=product_id).first()
             if wishlist_item:
@@ -3066,9 +3073,11 @@ class SimpleProfileView(APIView):
     def get(self, request):
         user = request.user if request.user.is_authenticated else None
         if not request.session.session_key:
+            print("No session id")
             request.session['initialized'] = True  # Initialize the session
             request.session.save()
         session_id = request.session.session_key
+        print(session_id)
         if user:
             profile = Profile.objects.get(user=user)
             data = {
@@ -3076,7 +3085,9 @@ class SimpleProfileView(APIView):
                 "mobile": profile.mobile_number if profile.mobile_number else ""
             }
         else:
-            temp_details = TemporaryUserContact.objects.get(session_id=session_id)
+            # temp_details = TemporaryUserContact.objects.get(session_id=session_id)
+            temp_details = get_object_or_404(TemporaryUserContact, session_id=session_id)
+            
             data = {
                 "username": temp_details.email,
                 "mobile": temp_details.mobile_number
@@ -3103,9 +3114,9 @@ class TemporaryUserCreateView(APIView):
         # Basic validation to ensure email and mobile are provided
         if not email or not mobile:
             return Response({
-                'Status': '0',
+                'Status': '1',
                 'message': 'Email and mobile number are required.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_200_OK)
 
         # Check if email or mobile already exists in TemporaryUserContact
         if TemporaryUserContact.objects.filter(email=email).exists():
@@ -3133,3 +3144,78 @@ class TemporaryUserCreateView(APIView):
             'Status': '1',
             'message': 'Success'
         }, status=status.HTTP_201_CREATED)
+    
+
+
+class CreateSessionIdView(APIView):
+    def get(self, request):
+        if not request.session.session_key:
+            request.session['initialized'] = True  # Initialize the session
+            request.session.save()
+        return Response({
+            'Status': '1',
+            'message': 'Success'
+        }, status=status.HTTP_200_OK)
+    
+
+
+class ProductReviewList(APIView):
+    permission_classes = [AllowAny]  # No authentication required
+
+    def get(self, request, product_id):
+        if not product_id:
+            return Response({"error": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch all reviews for the specified product
+        reviews = RatingReview.objects.filter(product_id=product_id)
+        serializer = RatingReviewSerializer(reviews, many=True)
+        return Response({
+            "Status": '1',
+            "message": "Success",
+            "Data": serializer.data
+        }, status=status.HTTP_200_OK)
+        # return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class AddProductReview(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        
+        # Check if the user is a customer
+        if not user.profile.user_type:  # Assuming you have a field to identify customer users
+            return Response({"error": "Only customers can add reviews."}, status=status.HTTP_403_FORBIDDEN)
+        
+        product_id = request.data.get('product_id')
+        rating = request.data.get('rating')
+        comments = request.data.get('comments')
+
+        if not product_id or not rating:
+            return Response({"error": "Product ID and rating are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if the product was in the user's delivered orders
+        delivered_items = OrderItem.objects.filter(order__user=user, status='2', product=product)
+        deli = OrderItem.objects.filter(order__user=user, product=product)
+        print(deli.exists())
+        if not delivered_items.exists():
+            return Response({"error": "You cannot review this product because you have not purchased it."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Save the review
+        data = {
+            'product': product_id,
+            'user': user.id,
+            'rating': rating,
+            'comments': comments
+        }
+        serializer = RatingReviewSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save(user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

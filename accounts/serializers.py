@@ -145,12 +145,15 @@ class ProductSerializer(serializers.ModelSerializer):
         # Check if the product is wishlisted for authenticated users
         if user:
             wishlist = Wishlist.objects.filter(user=user).first()
+            print("User---------------")
         else:
             # Check by session ID if the user is not authenticated
             wishlist = Wishlist.objects.filter(session_id=session_id).first()
+            print("Session----------------------", session_id)
 
         # If a wishlist exists, check if the product is in it
         if wishlist:
+            print(WishlistItem.objects.filter(wishlist=wishlist, product=obj).exists(), "============")
             return WishlistItem.objects.filter(wishlist=wishlist, product=obj).exists()
 
         return False
@@ -306,3 +309,11 @@ class SellerSignupSerializer(serializers.ModelSerializer):
         user.profile.save()
 
         return user
+    
+
+class RatingReviewSerializer(serializers.ModelSerializer):
+    username = serializers.ReadOnlyField(source='user.username')
+    class Meta:
+        model = RatingReview
+        fields = ['id', 'product', 'rating', 'comments', 'username', 'created_at']
+        read_only_fields = ['id', 'username', 'created_at']

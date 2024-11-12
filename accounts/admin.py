@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Profile,BankAccount ,SocialLink, Product, Category, Subcategory, CustomerOrder, OrderItem, DeliveryAddress, Brand, Banner, Productimg, OrderProductImage, SuperAdmin, TemporaryUserContact, Cart, CartItem, Wishlist, WishlistItem
+from .models import Profile,BankAccount ,SocialLink, Product, Category, Subcategory, CustomerOrder, OrderItem, DeliveryAddress, Brand, Banner, Productimg, OrderProductImage, SuperAdmin, TemporaryUserContact, Cart, CartItem, Wishlist, WishlistItem, RatingReview
 # Register your models here.
 
 class ProfileAdmin(admin.ModelAdmin):
@@ -72,3 +72,4 @@ admin.site.register(Cart)
 admin.site.register(CartItem)
 admin.site.register(Wishlist)
 admin.site.register(WishlistItem)
+admin.site.register(RatingReview)

@@ -103,14 +103,14 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 
-# SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-# SESSION_COOKIE_SAMESITE = None
-# SESSION_COOKIE_DOMAIN = None
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_SAMESITE = None
+SESSION_COOKIE_DOMAIN = None
 CSRF_COOKIE_SECURE = False
 
 
-# SESSION_COOKIE_HTTPONLY = True
-# SESSION_COOKIE_SECURE = False  
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False  
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
@@ -123,6 +123,8 @@ CORS_ALLOWED_ORIGINS = [
 
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_CREDENTIALS = True
 
 
 # Configure how long pages should stay in the cache
