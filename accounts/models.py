@@ -199,13 +199,21 @@ class Product(models.Model):
     min_order_quantity_four = models.IntegerField(default=200)
     min_order_quantity_five = models.IntegerField(default=250)
     delivery_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    delivery_time = models.IntegerField(default=3)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
-    product_rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
+    # product_rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
     stock = models.IntegerField(default=50)
     stock_status = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=now)  # Auto-set when created
     updated_at = models.DateTimeField(auto_now=True)  # Auto-update on save
     # images = models.JSONField(blank=True,null=True)
+
+
+    def get_average_rating(self):
+        reviews = self.reviews.all()
+        if reviews.exists():
+            return round(sum(review.rating for review in reviews) / reviews.count(), 1)
+        return 0
 
     def save(self, *args, **kwargs):
         # Automatically update stock_status based on stock value
@@ -265,7 +273,7 @@ class Productimg(models.Model):
 
 class RatingReview(models.Model):
     # product_id = models.CharField(max_length=255)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews', null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     rating = models.FloatField()
     comments = models.TextField(blank=True, null=True)

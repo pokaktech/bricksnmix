@@ -106,11 +106,13 @@ class ProductimgSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     product_images = ProductimgSerializer(many=True, required=False)
     wishlisted = serializers.SerializerMethodField()
+    product_rating = serializers.SerializerMethodField()
+    product_review_count = serializers.SerializerMethodField()
     # image = serializers.ImageField(required=False)
     
     class Meta:
         model = Product
-        fields = ['id', 'vendor', 'category', 'subcategory', 'brand', 'name', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'stock_status', 'min_order_quantity', 'min_order_quantity_two', 'min_order_quantity_three', 'min_order_quantity_four', 'min_order_quantity_five', 'delivery_charge', 'product_images', 'wishlisted', 'created_at', 'updated_at']
+        fields = ['id', 'vendor', 'category', 'subcategory', 'brand', 'name', 'price', 'offer_percent', 'actual_price', 'description', 'product_rating', 'product_review_count', 'stock', 'stock_status', 'min_order_quantity', 'min_order_quantity_two', 'min_order_quantity_three', 'min_order_quantity_four', 'min_order_quantity_five', 'delivery_charge', 'delivery_time', 'product_images', 'wishlisted', 'created_at', 'updated_at']
         read_only_fields = ['price', 'product_rating', 'created_at', 'updated_at']
 
     def create(self, validated_data):
@@ -157,6 +159,13 @@ class ProductSerializer(serializers.ModelSerializer):
             return WishlistItem.objects.filter(wishlist=wishlist, product=obj).exists()
 
         return False
+    
+    def get_product_rating(self, obj):
+        # print(obj.get_average_rating())
+        return obj.get_average_rating()
+    def get_product_review_count(self, obj):
+        return obj.reviews.count()
+
 
     
 class RatingReviewSerializer(serializers.ModelSerializer):

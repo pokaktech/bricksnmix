@@ -38,19 +38,19 @@ class SocialLinkAdmin(admin.ModelAdmin):
     list_per_page = 10    
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'category', 'price', 'offer_percent', 'brand', 'actual_price', 'product_rating', 'stock')
-    list_filter = ('category', 'price', 'product_rating', 'brand')
+    list_display = ('id', 'name', 'category', 'price', 'offer_percent', 'brand', 'actual_price', 'stock')
+    list_filter = ('category', 'price', 'brand')
     search_fields = ('name', 'description')
     ordering = ('-price',)
-    readonly_fields = ('product_rating',)
+    # readonly_fields = ('product_rating',)
     fieldsets = (
         (None, {
             'fields': ('vendor','name', 'category','subcategory', 'brand', 'price', 'offer_percent', 'actual_price', 'description', 'stock', 'stock_status', 'min_order_quantity', 'min_order_quantity_two', 'min_order_quantity_three', 'min_order_quantity_four', 'min_order_quantity_five', 'delivery_charge')
         }),
-        ('Additional Information', {
-            'classes': ('collapse',),
-            'fields': ('product_rating', ),
-        }),
+        # ('Additional Information', {
+        #     'classes': ('collapse',),
+        #     # 'fields': ('product_rating', ),
+        # }),
     )
 
 admin.site.register(SuperAdmin)
