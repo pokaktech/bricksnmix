@@ -9,7 +9,8 @@ from .forms import CaptchaPasswordResetForm
 from .views import RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
 from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView, PendingOrdersView, DeliveredOrdersView, CustomerBrandListView, CustomerBrandDetailView, CategoryProductSearchView, BrandProductSearchView, GetSellerOrders, WishlistView, SuperAdminContactView, SimpleProfileView, TemporaryUserCreateView, WishListFromCartView, ProductMinimumQuantityView, CreateSessionIdView, ProductReviewList, AddProductReview
 
-from .seller_views import TotalCustomerView
+from .seller_views import *
+from .superadmin_view import *
 # from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
 #     TokenRefreshView,
@@ -129,7 +130,18 @@ urlpatterns = [
     path('api/product-minimum-quantity/', ProductMinimumQuantityView.as_view(), name='product-minimum-quantity'),
     path('api/create-sessionid/', CreateSessionIdView.as_view(), name='create-sessionid'),
 
-    path('api/total-customer-view/', TotalCustomerView.as_view(), name='total-customer-view'),
+    path('api/seller-customer/', SellerTotalCustomerView.as_view(), name='total-customer-view'),
+    path('api/seller-revenue/', SellerTotalRevenueView.as_view(), name='total-revenue'),
+    path('api/seller-orders/', SellerTotalOrderView.as_view(), name='total-orders'),
+    path('api/seller-products/', SellerTotalProductView.as_view(), name='total-products'),
+    path('api/seller-topselling/', SellerTopSellingProductsAPIView.as_view(), name='top-selling-products'),
+
+
+    path('api/admin-all-customer/', AdminTotalCustomerView.as_view(), name='total-customer-view'),
+    path('api/admin-all-revenue/', AdminTotalRevenueView.as_view(), name='total-revenue'),
+    path('api/admin-all-orders/', AdminTotalOrderView.as_view(), name='total-orders'),
+    path('api/admin-all-products/', AdminTotalProductView.as_view(), name='total-products'),
+    path('api/admin-topselling-products/', AdminTopSellingProductsAPIView.as_view(), name='top-selling-products'),
 
     path('api/reviews/<int:product_id>/', ProductReviewList.as_view(), name='product_reviews'),
     path('api/reviews/add/', AddProductReview.as_view(), name='add_review'),

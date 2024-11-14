@@ -1,81 +1,181 @@
+from django.shortcuts import render, redirect
+from .forms import UserCreationForm, LoginForm
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from orders.models import Order, OrderDetails
+from django.views.generic import View, TemplateView
+from rest_framework.exceptions import ValidationError
+from django.views.decorators.csrf import csrf_exempt
+from django.http import Http404 
+from django.utils.decorators import method_decorator
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.http import JsonResponse
+from django.contrib.auth.models import User
+import json
 
+from django.utils import timezone
+
+
+# Create your views here.
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from .models import Category, Subcategory, RatingReview
+from .serializers import CategorySerializer,RatingReviewSerializer, DeliveryAddressSerializer
 from rest_framework import status
-from .models import Product
-from .models import OrderItem
-
-from .serializers import ProductSerializer
-
+from .models import Banner, Brand, Product, Productimg, Cart, CartItem, OrderProductImage, SuperAdmin
+from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer, CustomerSignupSerializer, SellerSignupSerializer, WishlistSerializer
 from django.shortcuts import get_object_or_404
+from .models import CustomerOrder, OrderItem
+from .serializers import CustomerOrderSerializer, OrderItemSerializer, CustomerCategorySerializer
+from accounts.models import DeliveryAddress
+from .models import Wishlist, WishlistItem
+from .models import BankAccount
+from .serializers import BankAccountSerializer
+from rest_framework import generics
+from .models import BankAccount
+from .serializers import BankAccountSerializer, ProfileSerializer, SubcategorySerializer
+from .models import SocialLink
+from django.utils.crypto import get_random_string
+
+from .serializers import SocialLinkSerializer
+
 from django.db.models.aggregates import Count
 from django.utils.timezone import now
 from datetime import timedelta
 from django.db.models import Sum
-from django.utils import timezone
 
 
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 
+
 from datetime import datetime, timedelta
 
 
 
-class SellerTotalCustomerView(APIView):
+
+class AdminTotalRevenueView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
+    
     def get(self, request):
         user = request.user
-        if user.profile.user_type == "seller":
-            # Fetch all orders and unique customers directly from OrderItem based on the vendor
-            order_items = OrderItem.objects.filter(product__vendor=user)
-            print(order_items)
-            # Fetch all orders containing products sold by this seller
-            unique_customers = order_items.values('order__user').distinct()
-
-            # Count the total number of unique customers
-            total_customers = unique_customers.count()
-
+        if user.is_superuser:
+            # Get all products belonging to the seller
+            # seller_products = Product.objects.all()
+            
+            # Calculate total revenue for all time
+            total_revenue = OrderItem.objects.all().aggregate(total=Sum('price'))['total'] or 0
+            
+            # Current month revenue
+            current_month_start = datetime.now().replace(day=1)
+            current_month_revenue = OrderItem.objects.filter(order__created_at__gte=current_month_start).aggregate(total=Sum('price'))['total'] or 0
+            
+            # Previous month revenue
+            previous_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
+            previous_month_end = current_month_start - timedelta(days=1)
+            previous_month_revenue = OrderItem.objects.filter(
+                order__created_at__gte=previous_month_start,
+                order__created_at__lte=previous_month_end
+            ).aggregate(
+                total=Sum('price')
+            )['total'] or 0
+            
+            # Calculate percentage change
+            if previous_month_revenue > 0:
+                change_percentage = ((current_month_revenue - previous_month_revenue) / previous_month_revenue) * 100
+            else:
+                change_percentage = 100 if current_month_revenue > 0 else 0
+                
+            data = [{
+                'total_revenue': total_revenue,
+                'change_percentage': round(change_percentage, 2)
+            }]
+            
             return Response({
-                'Status': "1",
-                'message': "Success",
-                "data": [
-                    {
-                        "total_customers": total_customers
-                    }
-                ]
-            })
+                'Status': '1',
+                'message': 'Success',
+                'data': data
+            }, status=status.HTTP_200_OK)
         else:
             return Response({
-                'Sttaus': '1',
+                'Status': '1',
                 'message': "You are not a seller"
             })
         
 
 
+class AdminTotalOrderView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    
+    def get(self, request):
+        user = request.user
+        if user.is_superuser:
+            # Get all orders containing seller's products
+            # seller_products = Product.objects.filter(vendor=user)
+            total_orders = OrderItem.objects.all().values('order').distinct().count()
+            
+            # Current month orders
+            current_month_start = datetime.now().replace(day=1)
+            current_month_orders = OrderItem.objects.filter(order__created_at__gte=current_month_start).values('order').distinct().count()
+            
+            # Previous month orders
+            previous_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
+            previous_month_end = current_month_start - timedelta(days=1)
+            previous_month_orders = OrderItem.objects.filter(
+                order__created_at__gte=previous_month_start,
+                order__created_at__lte=previous_month_end
+            ).values('order').distinct().count()
+            
+            # Calculate percentage change
+            if previous_month_orders > 0:
+                change_percentage = ((current_month_orders - previous_month_orders) / previous_month_orders) * 100
+            else:
+                change_percentage = 100 if current_month_orders > 0 else 0
+                
+            data = [{
+                'total_orders': total_orders,
+                'change_percentage': round(change_percentage, 2)
+            }]
+            
+            return Response({
+                'Status': '1',
+                'message': 'Success',
+                'data': data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'Status': '1',
+                'message': "You are not a Super Admin"
+            })
+        
 
 
 
-class SellerTotalCustomerView(APIView):
+class AdminTotalCustomerView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     def get(self, request):
         user = request.user
-        if user.profile.user_type == "seller":
-            order_items = OrderItem.objects.filter(product__vendor=user)
+        if user.is_superuser:
+            order_items = OrderItem.objects.all()
             unique_customers = order_items.values('order__user').distinct().count()
 
             # Get all products belonging to the seller
-            seller_products = Product.objects.filter(vendor=user)
+            seller_products = Product.objects.all()
 
             # Get all orders containing products sold by this seller (current month)
             current_month_start = datetime.now().replace(day=1)
             current_month_customers = (
                 OrderItem.objects
-                .filter(product__in=seller_products, order__created_at__gte=current_month_start)
+                .filter(order__created_at__gte=current_month_start)
                 .values('order__user')
                 .distinct()
             )
@@ -89,7 +189,6 @@ class SellerTotalCustomerView(APIView):
             previous_month_customers = (
                 OrderItem.objects
                 .filter(
-                    product__in=seller_products,
                     order__created_at__gte=previous_month_start,
                     order__created_at__lte=previous_month_end
                 )
@@ -118,137 +217,25 @@ class SellerTotalCustomerView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         else:
             return Response({
-                'Sttaus': '1',
-                'message': "You are not a seller"
+                'Status': '1',
+                'message': "You are not a Super Admin"
             })
+        
 
 
-
-
-class SellerTotalRevenueView(APIView):
+class AdminTotalProductView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     
     def get(self, request):
         user = request.user
-        if user.profile.user_type == "seller":
-            # Get all products belonging to the seller
-            seller_products = Product.objects.filter(vendor=user)
-            
-            # Calculate total revenue for all time
-            total_revenue = OrderItem.objects.filter(
-                product__in=seller_products
-            ).aggregate(
-                total=Sum('price')
-            )['total'] or 0
-            
-            # Current month revenue
-            current_month_start = datetime.now().replace(day=1)
-            current_month_revenue = OrderItem.objects.filter(
-                product__in=seller_products,
-                order__created_at__gte=current_month_start
-            ).aggregate(
-                total=Sum('price')
-            )['total'] or 0
-            
-            # Previous month revenue
-            previous_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
-            previous_month_end = current_month_start - timedelta(days=1)
-            previous_month_revenue = OrderItem.objects.filter(
-                product__in=seller_products,
-                order__created_at__gte=previous_month_start,
-                order__created_at__lte=previous_month_end
-            ).aggregate(
-                total=Sum('price')
-            )['total'] or 0
-            
-            # Calculate percentage change
-            if previous_month_revenue > 0:
-                change_percentage = ((current_month_revenue - previous_month_revenue) / previous_month_revenue) * 100
-            else:
-                change_percentage = 100 if current_month_revenue > 0 else 0
-                
-            data = [{
-                'total_revenue': total_revenue,
-                'change_percentage': round(change_percentage, 2)
-            }]
-            
-            return Response({
-                'Status': '1',
-                'message': 'Success',
-                'data': data
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response({
-                'Status': '1',
-                'message': "You are not a seller"
-            })
-
-class SellerTotalOrderView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
-    
-    def get(self, request):
-        user = request.user
-        if user.profile.user_type == "seller":
-            # Get all orders containing seller's products
-            seller_products = Product.objects.filter(vendor=user)
-            total_orders = OrderItem.objects.filter(
-                product__in=seller_products
-            ).values('order').distinct().count()
-            
-            # Current month orders
-            current_month_start = datetime.now().replace(day=1)
-            current_month_orders = OrderItem.objects.filter(
-                product__in=seller_products,
-                order__created_at__gte=current_month_start
-            ).values('order').distinct().count()
-            
-            # Previous month orders
-            previous_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
-            previous_month_end = current_month_start - timedelta(days=1)
-            previous_month_orders = OrderItem.objects.filter(
-                product__in=seller_products,
-                order__created_at__gte=previous_month_start,
-                order__created_at__lte=previous_month_end
-            ).values('order').distinct().count()
-            
-            # Calculate percentage change
-            if previous_month_orders > 0:
-                change_percentage = ((current_month_orders - previous_month_orders) / previous_month_orders) * 100
-            else:
-                change_percentage = 100 if current_month_orders > 0 else 0
-                
-            data = [{
-                'total_orders': total_orders,
-                'change_percentage': round(change_percentage, 2)
-            }]
-            
-            return Response({
-                'Status': '1',
-                'message': 'Success',
-                'data': data
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response({
-                'Status': '1',
-                'message': "You are not a seller"
-            })
-
-class SellerTotalProductView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
-    
-    def get(self, request):
-        user = request.user
-        if user.profile.user_type == "seller":
+        if user.is_superuser:
             # Get total products
-            total_products = Product.objects.filter(vendor=user).count()
+            total_products = Product.objects.all().count()
             
             # Current month products
             current_month_start = datetime.now().replace(day=1)
             current_month_products = Product.objects.filter(
-                vendor=user,
                 created_at__gte=current_month_start
             ).count()
             
@@ -256,7 +243,6 @@ class SellerTotalProductView(APIView):
             previous_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
             previous_month_end = current_month_start - timedelta(days=1)
             previous_month_products = Product.objects.filter(
-                vendor=user,
                 created_at__gte=previous_month_start,
                 created_at__lte=previous_month_end
             ).count()
@@ -280,33 +266,29 @@ class SellerTotalProductView(APIView):
         else:
             return Response({
                 'Status': '1',
-                'message': "You are not a seller"
+                'message': "You are not a Super Admin"
             })
         
 
 
-
-class SellerTopSellingProductsAPIView(APIView):
+class AdminTopSellingProductsAPIView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        if user.profile.user_type == "seller":
+        if user.is_superuser:
             # Define a time range, e.g., past 30 days
             days_range = 30
             time_threshold = timezone.now() - timedelta(days=days_range)
 
             # Annotate products with the sum of quantities sold in the given time range
-            top_selling_products = Product.objects.filter(
-                vendor=user,
+            fast_moving_products = Product.objects.filter(
                 orderitem__order__created_at__gte=time_threshold, stock__gt=0
             ).annotate(
                 total_sales=Sum('orderitem__quantity')
             ).order_by('-total_sales')[:5]  # Top 5 top selling products
 
             # Serialize the products (assuming you have a ProductSerializer)
-            serializer = ProductSerializer(top_selling_products, many=True, context={'request': request})
+            serializer = ProductSerializer(fast_moving_products, many=True, context={'request': request})
             return Response({"Status": "1", "message": "Success", "Data": serializer.data})
-        else:
-            return Response({"Status": "1", "message": "You are not a seller"})
