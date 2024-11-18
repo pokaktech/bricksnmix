@@ -7,7 +7,7 @@ from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
 from .forms import CaptchaPasswordResetForm
 from .views import RegisterView, LoginView,RatingReviewListCreate, RatingReviewDetail
-from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView, PendingOrdersView, DeliveredOrdersView, CustomerBrandListView, CustomerBrandDetailView, CategoryProductSearchView, BrandProductSearchView, GetSellerOrders, WishlistView, SuperAdminContactView, SimpleProfileView, TemporaryUserCreateView, WishListFromCartView, ProductMinimumQuantityView, CreateSessionIdView, ProductReviewList, AddProductReview
+from .views import BannerListView,TrendingBrandsView, AddBrandView, OfferProductView, ProductDetail,ProductSearchView,CartView, UpdateCart,PlaceOrderView,GetOrdersView,GetDeliveryChargeView,DeleteFromCart,AddToWishlist,DeleteFromWishlist,UpdateProfileView, GetOrderBySellerID, SubcategoryListCreateAPIView, SubcategoryRetrieveUpdateDestroyAPIView, TrendingProductAPIView, CustomAuthToken, LogoutView, ProfileUpdateView, CustomerSignupView, SellerSignupView, FastMovingProductsAPIView, ProductStockView, ProductView, CategoryRetrieveUpdateDestroyAPIView, CategoryListCreateView, DeliveryAddressListCreateView, DeliveryAddressDetailView, DefaultDeliveryAddressView, Checkout, CustomerCategoryListView, CustomerCategoryDetailView, AllOrdersView, PendingOrdersView, DeliveredOrdersView, CustomerBrandListView, CustomerBrandDetailView, CategoryProductSearchView, BrandProductSearchView, GetSellerOrders, WishlistView, SuperAdminContactView, SimpleProfileView, TemporaryUserCreateView, WishListFromCartView, ProductMinimumQuantityView, CreateSessionIdView, ProductReviewList, AddProductReview, CategoryBannerView, WebCreateSessionIdView
 
 from .seller_views import *
 from .superadmin_view import *
@@ -129,6 +129,7 @@ urlpatterns = [
     path('api/temporary-user-register/', TemporaryUserCreateView.as_view(), name='temporary-user-register'),
     path('api/product-minimum-quantity/', ProductMinimumQuantityView.as_view(), name='product-minimum-quantity'),
     path('api/create-sessionid/', CreateSessionIdView.as_view(), name='create-sessionid'),
+    path('api/webcreate-sessionid/', WebCreateSessionIdView.as_view(), name='webcreate-sessionid'),
 
     path('api/seller-customer/', SellerTotalCustomerView.as_view(), name='total-customer-view'),
     path('api/seller-revenue/', SellerTotalRevenueView.as_view(), name='total-revenue'),
@@ -145,6 +146,7 @@ urlpatterns = [
 
     path('api/reviews/<int:product_id>/', ProductReviewList.as_view(), name='product_reviews'),
     path('api/reviews/add/', AddProductReview.as_view(), name='add_review'),
+    path('category-banners/', CategoryBannerView.as_view(), name='category-banners'),
 ]
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Category, Subcategory, Banner, Brand, Product, Productimg, RatingReview,Cart, CartItem, CustomerOrder, OrderItem, DeliveryAddress, OrderProductImage, Wishlist, WishlistItem
 from django.contrib.auth.models import User
 from .models import BankAccount, Profile
-from .models import SocialLink
+from .models import SocialLink, CategoryBanner
 from rest_framework.exceptions import ValidationError
 
 # class SubcategorySerializer(serializers.ModelSerializer):
@@ -42,6 +42,15 @@ class CustomerCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'image']
+
+
+class CategoryBannerSerializer(serializers.ModelSerializer):
+    bannername = serializers.CharField(source='name')
+    image = serializers.ImageField()
+
+    class Meta:
+        model = CategoryBanner
+        fields = ['id', 'bannername', 'image']
         
 class BannerSerializer(serializers.ModelSerializer):
     bannername = serializers.CharField(source='name')

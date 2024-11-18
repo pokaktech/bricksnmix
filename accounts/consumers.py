@@ -299,36 +299,163 @@
 
 
 
-import json
-from channels.generic.websocket import AsyncWebsocketConsumer
+# import json
+# from channels.generic.websocket import AsyncWebsocketConsumer
 
-class NotificationConsumer(AsyncWebsocketConsumer):
+# class NotificationConsumer(AsyncWebsocketConsumer):
+#     async def connect(self):
+#         self.group_name = 'notifications'
+#         # Join notifications group
+#         await self.channel_layer.group_add(
+#             self.group_name,
+#             self.channel_name
+#         )
+#         await self.accept()
+
+#     async def disconnect(self, close_code):
+#         # Leave notifications group
+#         await self.channel_layer.group_discard(
+#             self.group_name,
+#             self.channel_name
+#         )
+
+#     async def receive(self, text_data):
+#         # This method would handle incoming WebSocket data if needed
+#         text_data_json = json.loads(text_data)
+#         print(text_data_json)
+#         pass
+
+#     # Custom method to send notifications to the WebSocket
+#     async def send_notification(self, event):
+#         message = event['message']
+#         # Send message to WebSocket
+#         await self.send(text_data=json.dumps({
+#             'message': message
+#         }))
+
+
+
+
+
+
+# from channels.generic.websocket import AsyncWebsocketConsumer
+# import json
+
+# class OrderNotificationConsumer(AsyncWebsocketConsumer):
+#     async def connect(self):
+#         # Assume seller's user ID is sent as part of the WebSocket URL or query
+#         self.seller_id = self.scope['url_route']['kwargs']['seller_id']
+#         self.seller_group_name = f'seller_{self.seller_id}'
+
+#         # Add seller to their unique group
+#         await self.channel_layer.group_add(
+#             self.seller_group_name,
+#             self.channel_name
+#         )
+
+#         await self.accept()
+
+#     async def disconnect(self, close_code):
+#         # Remove seller from their group on disconnect
+#         await self.channel_layer.group_discard(
+#             self.seller_group_name,
+#             self.channel_name
+#         )
+
+#     async def receive(self, text_data):
+#         # Handle WebSocket messages here (e.g., seller approves an order)
+#         pass
+
+#     # Method to send notification to the seller
+#     async def send_seller_notification(self, event):
+#         await self.send(text_data=json.dumps(event['message']))
+
+
+
+
+
+
+
+
+
+# from channels.layers import get_channel_layer
+# from asgiref.sync import async_to_sync
+
+# def place_order(request):
+#     # Logic to save the order in the database
+
+#     # Assuming you have the seller's user ID available (e.g., `seller_id`)
+#     seller_id = product.seller.id  # Get seller's ID from the product or order
+#     channel_layer = get_channel_layer()
+
+#     # Send a notification to the specific seller's WebSocket group
+#     async_to_sync(channel_layer.group_send)(
+#         f'seller_{seller_id}',  # Send to this seller's group
+#         {
+#             'type': 'send_seller_notification',
+#             'message': {
+#                 'text': 'New order received!',
+#                 'order_id': order.id
+#             }
+#         }
+#     )
+
+#     return Response({"status": "success", "message": "Order placed successfully"})
+
+
+
+
+# consumers.py
+from channels.generic.websocket import AsyncWebsocketConsumer
+import json
+
+class OrderNotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = 'notifications'
-        # Join notifications group
-        await self.channel_layer.group_add(
-            self.group_name,
-            self.channel_name
-        )
-        await self.accept()
+        user = self.scope['user']
+        if user.is_authenticated:
+            # Determine if the user is a seller or customer
+            if user.profile.user_type == "seller":
+                # Add the seller to a specific group based on their user ID
+                self.group_name = f'seller_{user.id}'
+            else:
+                # Add the customer to a general notification group
+                self.group_name = f'customer_{user.id}'
+
+            await self.channel_layer.group_add(self.group_name, self.channel_name)
+            await self.accept()
 
     async def disconnect(self, close_code):
-        # Leave notifications group
-        await self.channel_layer.group_discard(
-            self.group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive(self, text_data):
-        # This method would handle incoming WebSocket data if needed
-        text_data_json = json.loads(text_data)
-        print(text_data_json)
-        pass
+        data = json.loads(text_data)
+        message = data.get('message')
+        await self.send(text_data=json.dumps({'message': message}))
 
-    # Custom method to send notifications to the WebSocket
-    async def send_notification(self, event):
-        message = event['message']
-        # Send message to WebSocket
-        await self.send(text_data=json.dumps({
-            'message': message
-        }))
+    async def send_order_notification(self, event):
+        await self.send(text_data=json.dumps(event['message']))
+
+
+
+
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+def notify_seller(order):
+    channel_layer = get_channel_layer()
+    seller_id = order.seller.id
+    message = {
+        'type': 'send_order_notification',
+        'message': f'New order placed: {order.id}'
+    }
+    async_to_sync(channel_layer.group_send)(f'seller_{seller_id}', message)
+
+def notify_customer(order):
+    channel_layer = get_channel_layer()
+    customer_id = order.customer.id
+    message = {
+        'type': 'send_order_notification',
+        'message': f'Your order {order.id} is confirmed!'
+    }
+    async_to_sync(channel_layer.group_send)(f'customer_{customer_id}', message)

@@ -169,6 +169,14 @@ class Subcategory(models.Model):
     def __str__(self):
         return self.name
     
+
+class CategoryBanner(models.Model):
+    name = models.CharField(max_length=255)
+    image = models.ImageField(upload_to='category_banners/', blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+    
 class Banner(models.Model):
     name = models.CharField(max_length=255)
     image = models.ImageField(upload_to='banners/', blank=True, null=True)

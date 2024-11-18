@@ -30,6 +30,7 @@ import os
 # Import HttpResponse module
 from django.http.response import HttpResponse
 from django.utils import timezone
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 
 # Create your views here.
@@ -45,7 +46,7 @@ from rest_framework import status
 from .models import Banner, Brand, Product, Productimg, Cart, CartItem, OrderProductImage, SuperAdmin
 from .serializers import BannerSerializer, BrandSerializer, OfferProductSerializer, ProductSerializer, ProductimgSerializer,CartSerializer, CartItemSerializer, CustomerSignupSerializer, SellerSignupSerializer, WishlistSerializer
 from django.shortcuts import get_object_or_404
-from .models import CustomerOrder, OrderItem
+from .models import CustomerOrder, OrderItem, CategoryBanner
 from .serializers import CustomerOrderSerializer, OrderItemSerializer, CustomerCategorySerializer
 from accounts.models import DeliveryAddress
 from .models import Wishlist, WishlistItem
@@ -57,7 +58,7 @@ from .serializers import BankAccountSerializer, ProfileSerializer, SubcategorySe
 from .models import SocialLink
 from django.utils.crypto import get_random_string
 
-from .serializers import SocialLinkSerializer
+from .serializers import SocialLinkSerializer, CategoryBannerSerializer
 
 from django.db.models.aggregates import Count
 from django.utils.timezone import now
@@ -3147,17 +3148,70 @@ class TemporaryUserCreateView(APIView):
     
 
 
+class WebCreateSessionIdView(APIView):
+    def get(self, request):
+        # Get the session ID from the request header
+        print("Session id from header", request.headers.get('Session-Id'))
+        session_id = request.headers.get('Session-Id', None)
+        # print("sessoooooo", request.headers)
+        if not session_id:
+            # If no session ID is provided, create a new one
+            if not request.session.session_key:
+                request.session.create()  # Create a session if not already created
+            session_id = request.session.session_key
+
+        # Optionally, handle cart logic here
+        try:
+            cart = Cart.objects.get(session_id=session_id)
+            cart_items = CartItem.objects.filter(cart=cart).count()
+        except Cart.DoesNotExist:
+            cart_items = 0
+
+        # Return session ID and cart item count in the response
+        return JsonResponse({
+            'Status': '1',
+            'message': 'Success',
+            'sessionid': session_id,  # Send session ID in the response body
+            'Data': cart_items,
+        })
+
+
 class CreateSessionIdView(APIView):
     def get(self, request):
-        if not request.session.session_key:
-            request.session['initialized'] = True  # Initialize the session
-            request.session.save()
+        # Create a session if it doesn't exist
+        print("oooooooo", request.session.session_key)
+        session_id = request.headers.get('Session-Id', None)
+        if not session_id:
+            if not request.session.session_key:
+                request.session['initialized'] = True
+                request.session.save()
+        
+        session_id = request.session.session_key
+        print(f"Session ID: {session_id}")
+        
+        try:
+            cart = Cart.objects.get(session_id=session_id)
+            cart_items = CartItem.objects.filter(cart=cart).count()
+        except Cart.DoesNotExist:
+            cart_items = 0
+
+        # Prepare the response
         return Response({
             'Status': '1',
-            'message': 'Success'
+            'message': 'Success',
+            'Data': cart_items,
+            'sessionid': session_id
         }, status=status.HTTP_200_OK)
-    
 
+        # Set the session ID as a cookie
+        # response.set_cookie(
+        #     key=settings.SESSION_COOKIE_NAME,
+        #     value=session_id,
+        #     httponly=True,
+        #     samesite='None',
+        #     secure=False  # Set to True if using HTTPS
+        # )
+        # return response
 
 class ProductReviewList(APIView):
     permission_classes = [AllowAny]  # No authentication required
@@ -3219,3 +3273,17 @@ class AddProductReview(APIView):
             serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+
+class CategoryBannerView(APIView):
+    def get(self, request, format=None):
+        print("check")
+        category_banners = CategoryBanner.objects.all()
+        serializer = CategoryBannerSerializer(category_banners, many=True)
+        return Response({
+            "Status": "1",
+            "message": "Success",
+            "Data": serializer.data
+        })  
