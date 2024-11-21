@@ -13,4 +13,4 @@ class NewsletterAdmin(admin.ModelAdmin):
     search_fields = ('email',)
 
 
-admin.site.register(Newsletter, NewsletterAdmin)
+# admin.site.register(Newsletter, NewsletterAdmin)

@@ -1,9 +1,9 @@
 from django import template
 #from orders.views import Order, OrderDetails
 # from orders.models import Order, OrderDetails
-from accounts.models import CustomerOrder, OrderItem
+from orders.models import CustomerOrder, OrderItem
 # from products.models import Product 
-from accounts.models import Product
+from products.models import Product
 from django.contrib.auth.models import User
 
 register = template.Library()

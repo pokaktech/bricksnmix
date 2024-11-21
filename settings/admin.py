@@ -65,8 +65,8 @@ class HomePageThemeAdmin(admin.ModelAdmin):
 
 
 # admin.site.register(StripeSetting)
-admin.site.register(ContactInfo, ContactInfoAdmin)
-admin.site.register(SocailLinks, SocaillinksAdmin)
-admin.site.register(SupportNumber, SupportNumberAdmin)
-admin.site.register(SiteSetting)
-admin.site.register(HomePageTheme, HomePageThemeAdmin)
+# admin.site.register(ContactInfo, ContactInfoAdmin)
+# admin.site.register(SocailLinks, SocaillinksAdmin)
+# admin.site.register(SupportNumber, SupportNumberAdmin)
+# admin.site.register(SiteSetting)
+# admin.site.register(HomePageTheme, HomePageThemeAdmin)

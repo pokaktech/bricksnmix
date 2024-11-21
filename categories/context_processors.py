@@ -1,14 +1,10 @@
 
-from .models import SubCategory, MainCategory, SuperCategory, MiniCategory
+from .models import Category, Subcategory
 
 
 def category_obj(request):
-    supercategory = SuperCategory.objects.all()
-    maincategory = MainCategory.objects.all()
-    subcategory = SubCategory.objects.all()
-    minicategory = MiniCategory.objects.all()
+    category = Category.objects.all()
+    subcategory = Subcategory.objects.all()
     return {
-        'supercategory': supercategory,
-        'maincategory': maincategory,
-        'subcategory': subcategory,
-        'minicategory': minicategory, }
+        'category': category,
+        'subcategory': subcategory, }

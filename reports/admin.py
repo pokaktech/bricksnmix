@@ -31,5 +31,5 @@ class PostViewAdmin(admin.ModelAdmin):
     # list_per_page = 10
     # search_fields = ('user__username', )
 
-admin.site.register(PostView , PostViewAdmin)
-admin.site.register(PostReport,PostReportAdmin)
+# admin.site.register(PostView , PostViewAdmin)
+# admin.site.register(PostReport,PostReportAdmin)

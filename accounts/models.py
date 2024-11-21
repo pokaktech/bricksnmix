@@ -58,20 +58,11 @@ class Profile(models.Model):
         default=customer,
         blank=True, null=True,
     )
-    # admission = models.BooleanField(default=False, verbose_name=_("admission") , blank=True, null=True)
-    # code = models.CharField(max_length=250, blank=True, null=True)
-    # recommended_by = models.ForeignKey(
-    #     User, on_delete=models.CASCADE, related_name="recommended_by", blank=True, null=True)
-    # referrals = models.IntegerField(default=0, blank=True, null=True)
-    # blance = models.FloatField(default=0.00, blank=True, null=True)
-    # requested = models.FloatField(default=0.00, blank=True, null=True)
-    # date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    
     date_update = models.DateTimeField(auto_now=True, blank=True, null=True)
     slug = models.SlugField(
         blank=True, null=True, allow_unicode=True, unique=True, verbose_name=_("Slugfiy"))
 
-    # email = models.EmailField(max_length=254, blank=True, null=True)
-    # name = models.CharField(max_length=100, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     default_address = models.ForeignKey('DeliveryAddress', null=True, blank=True, on_delete=models.SET_NULL)
     # type = models.CharField(max_length=10, choices=[('user', 'User'), ('seller', 'Seller')], blank=True, null=True)
@@ -104,16 +95,7 @@ class Profile(models.Model):
             if qs_exists:
                 self.slug = create_shortcode(self)
 
-        # if self.code is None or self.code == "":
-        #     # code = generate_ref_code()
-        #     # self.code = code
-        #     self.code = f'{self.user}'
-
-        # img = Image.open(self.image.path)
-        # if img.width > 300 or img.height > 300:
-        #     out_size = (300, 300)
-        #     img.thumbnail(out_size)
-        #     img.save(self.image.path)
+        
 
         super().save(*args, **kwargs)
 
@@ -154,142 +136,12 @@ class SocialLink(models.Model):
     pinterest = models.CharField(max_length=200, blank=True, null=True, )
 
 
-class Category(models.Model):
-    name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='categories/', blank=True, null=True)
+
     
-    def __str__(self):
-        return self.name
-
-class Subcategory(models.Model):
-    category = models.ForeignKey(Category, related_name='subcategories', on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='subcategories/', blank=True, null=True)
-    
-    def __str__(self):
-        return self.name
-    
-
-class CategoryBanner(models.Model):
-    name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='category_banners/', blank=True, null=True)
-
-    def __str__(self):
-        return self.name
-    
-class Banner(models.Model):
-    name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='banners/', blank=True, null=True)
-
-    def __str__(self):
-        return self.name
-    
-class Brand(models.Model):
-    name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='brands/', blank=True, null=True)
-
-    def __str__(self):
-        return self.name    
-
-class Product(models.Model):
-    vendor = models.ForeignKey(User, on_delete=models.CASCADE)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True)
-    subcategory = models.ForeignKey(Subcategory, on_delete=models.SET_NULL, blank=True, null=True)
-    name = models.CharField(max_length=255)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    offer_percent = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    actual_price = models.DecimalField(max_digits=10, decimal_places=2)
-    # image = models.ImageField(upload_to='products/', blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-    min_order_quantity = models.IntegerField(default=50)
-    min_order_quantity_two = models.IntegerField(default=100)
-    min_order_quantity_three = models.IntegerField(default=150)
-    min_order_quantity_four = models.IntegerField(default=200)
-    min_order_quantity_five = models.IntegerField(default=250)
-    delivery_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    delivery_time = models.IntegerField(default=3)
-    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
-    # product_rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
-    stock = models.IntegerField(default=50)
-    stock_status = models.BooleanField(default=True)
-    created_at = models.DateTimeField(default=now)  # Auto-set when created
-    updated_at = models.DateTimeField(auto_now=True)  # Auto-update on save
-    # images = models.JSONField(blank=True,null=True)
+  
 
 
-    def get_average_rating(self):
-        reviews = self.reviews.all()
-        if reviews.exists():
-            return round(sum(review.rating for review in reviews) / reviews.count(), 1)
-        return 0
 
-    def save(self, *args, **kwargs):
-        # Automatically update stock_status based on stock value
-        if self.stock == 0:
-            self.stock_status = False
-        # else:
-        #     self.stock_status = True
-
-        if self.actual_price and self.offer_percent:
-            discount_amount = (self.actual_price * self.offer_percent) / 100
-            self.price = self.actual_price - discount_amount
-        else:
-            self.price = self.actual_price  # No discount if offer_percent is None or 0
-        super(Product, self).save(*args, **kwargs)
-    
-    def __str__(self):
-        return self.name    
-    
-class Cart(models.Model):
-    id = models.UUIDField(default=uuid.uuid4, primary_key=True)
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    # session_id = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
-    session_id = models.CharField(max_length=40, unique=True, null=True, blank=True)
-
-    # product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    # quantity = models.IntegerField(default=1)
-    def __str__(self):
-        return f"Cart - {self.user if self.user else self.session_id}"
-
-        
-class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=1)
-    created_at = models.DateTimeField(default=now)  # Auto-set when created
-    updated_at = models.DateTimeField(auto_now=True)  # Auto-update on save
-
-    def __str__(self):
-        if self.cart.user:
-            return f"{self.product.name} in {self.cart.user.username}'s Cart"
-        else:
-            return f"{self.product.name} in {self.cart.session_id}'s Cart"
-           
-class Productimg(models.Model):
-    product = models.ForeignKey(Product, related_name='product_images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='product_images/')
-
-    def __str__(self):
-        return f"Image for {self.product.name}"    
-
-# class ProductImage(models.Model):
-#     product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
-#     image = models.ImageField(upload_to='product_images/')
-
-#     def __str__(self):
-#         return f"Image for {self.product.name
-
-class RatingReview(models.Model):
-    # product_id = models.CharField(max_length=255)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews', null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    rating = models.FloatField()
-    comments = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f'{self.product_id} - {self.user.username}'
 
 class DeliveryAddress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -311,83 +163,9 @@ class DeliveryAddress(models.Model):
     def __str__(self):
         return f"{self.name} - {self.mobile}"
 
-class CustomerOrder(models.Model):
-    # STATUS_CHOICES = [
-    #     ('Ordered', 'Ordered'),
-    #     ('Shipped', 'Shipped'),
-    #     ('Delivered', 'Delivered'),
-    #     ('CANCELLED', 'Cancelled'),
-    # ]
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    # status = models.CharField(max_length=50, choices=[('1', 'Ordered'), ('2', 'Shipped'), ('3', 'Delivered')], default='1')
-    total_price = models.DecimalField(max_digits=10, decimal_places=2)
-    delivery_charge = models.DecimalField(max_digits=10, decimal_places=2)
-    net_total = models.DecimalField(max_digits=10, decimal_places=2)
-    # payment_type = models.CharField(max_length=50, blank=True, null=True)
-    payment_type = models.CharField(max_length=50, choices=[('COD', 'COD'), ('UPI', 'UPI'), ('CREDIT CARD', 'CREDIT CARD'), ('DEBIT CARD', 'DEBIT CARD')], default='COD')
-    order_number = models.CharField(max_length=100, unique=True)
-    delivery_address = models.ForeignKey(DeliveryAddress, on_delete=models.SET_NULL, null=True)
-    payment_status = models.CharField(max_length=50, choices=[('Pending', 'Pending'), ('Completed', 'Completed')], default='Pending')
-    tracking_number = models.CharField(max_length=100, blank=True, null=True)
-    carrier = models.CharField(max_length=100, blank=True, null=True)
-    is_canceled = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"Order {self.id} by {self.user.username}"
-
-class OrderItem(models.Model):
-    order = models.ForeignKey(CustomerOrder, related_name='items', on_delete=models.CASCADE)
-    STATUS_CHOICES = [
-        ('Ordered', 'Ordered'),## ordered_confirmed
-        ('Shipped', 'Shipped'),
-        ('Delivered', 'Delivered'),
-        ('CANCELLED', 'Cancelled'),
-    ]
-    status = models.CharField(max_length=50, choices=[('0', 'Ordered'), ('1', 'Shipped'), ('2', 'Delivered')], default='1')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    is_approved = models.BooleanField(default=False)
-    quantity = models.IntegerField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    delivery_time = models.IntegerField(default=7)  # Estimated delivery time in days
-    delivered_at = models.DateField(null=True, blank=True)  # Actual delivery date
-
-    def __str__(self):
-        return f"{self.quantity} of {self.product.name}"
     
-    def estimated_delivery_date(self):
-        if self.delivered_at:
-            # If the product is delivered, return the actual delivery date
-            return self.delivered_at
-        # Otherwise, calculate the estimated delivery date
-        return self.order.created_at + timedelta(days=self.delivery_time)
 
-class OrderProductImage(models.Model):
-    order_item = models.ForeignKey(OrderItem, related_name='images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='order_item_images/')
-
-    def __str__(self):
-        return f"Image for {self.order_item.product.name}"
-    
-class Wishlist(models.Model):
-    id = models.UUIDField(default=uuid.uuid4, primary_key=True)
-    user = models.OneToOneField(User, null=True, blank=True, on_delete=models.CASCADE)
-    session_id = models.CharField(max_length=40, unique=True, null=True, blank=True)
-
-    def __str__(self):
-        return f"Wishlist - {self.user if self.user else self.session_id}"
-
-class WishlistItem(models.Model):
-    wishlist = models.ForeignKey(Wishlist, related_name='items', on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    added_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        if self.wishlist.user:
-            return f"{self.product.name} in {self.wishlist.user.username}'s Wishlist"
-        else:
-            return f"{self.product.name} in {self.wishlist.session_id}'s Wishlist"
 
 
 

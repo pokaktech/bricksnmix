@@ -13,4 +13,4 @@ class MessagesListAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email',
                      'phone', 'subject', )
 
-admin.site.register(MessagesList, MessagesListAdmin)
+# admin.site.register(MessagesList, MessagesListAdmin)

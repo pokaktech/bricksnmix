@@ -1,42 +1,31 @@
 from django.urls import path
-from . import views
-from django.conf import settings
-from django.conf.urls.static import static
-from django.urls import reverse_lazy
-# from .forms import CaptchaPasswordResetForm
+
+from orders.views.customer_views import *
+from orders.views.superadmin_views import *
+from orders.views.seller_views import *
 
 app_name = 'orders'
 urlpatterns = [
-     path('add_to_cart/', views.add_to_cart, name='add-to-cart'),
-     path('cart/', views.cart, name='cart'),
-     path('cart/<str:country>/', views.StatesJsonListView.as_view(), name="get-states"),
-     path('order/remeve-product/<int:productdeatails_id>',
-          views.remove_item, name="remove-item"),
-     path('payment/', views.payment, name="payment"),
-     path('payment_blance/', views.payment_blance, name="payment-blance"),
-     path('payment_cash/', views.payment_cash, name="payment-cash"),
-     path('order/cancel/', views.CancelView.as_view(), name='cancel'),
-     path('order/success/', views.success, name='success'),
-     # path('create_payment/', views.create_payment, name='create-payment'),
-     path('create_checkout_session/',
-          views.create_checkout_session, name='create_checkout_session'),
-     path('orders/webhook/', views.my_webhook_view, name='my-webhook'),
-     # #     path('mob/', views.my_MOB_view, name='my-mob')
-     # path('tracking/', views.tracking, name='tracking'),
-     path('verify-payment/', views.verify_payment_razorpay, name="verify-payment"),
-     path('verify-payment-paypal/', views.verify_payment_paypal,
-          name="verify-payment-paypal"),
-     path('checkout-paymob/<int:id>',
-          views.checkout_payment_paymob, name="checkout-paymob"),
-     path('api/callbacks/', views.my_webhook_view_paymob,
-          name="webhook-view-paymob"),
-          
-     path('checkout-fatoorah/<int:id>',
-         views.send_payment_fatoorah, name="checkout-fatoorah"),
+      #customer
+      path('', AllOrdersView.as_view(), name='all-orders'),
+      path('pending/', PendingOrdersView.as_view(), name='pending-orders'),
+      path('delivered/', DeliveredOrdersView.as_view(), name='delivered-orders'),
+      path('checkout/', Checkout.as_view(), name='order-checkout'),
+      path('place-order/', PlaceOrderView.as_view(), name='place-order'),
 
-     path('api/callbacks-myfatoorah/', views.callback_url_fatoorah,
-          name="callbacks-myfatoorah"),
+      path('cart/', CartView.as_view(), name='add-to-cart'),
+      path('update-cart/', UpdateCart.as_view(), name='update-cart'),
+
+      #seller
+      path('seller/customers/', SellerTotalCustomerView.as_view(), name='total-customer'),
+      path('seller/revenue/', SellerTotalRevenueView.as_view(), name='total-revenue'),
+      path('seller/', SellerTotalOrderView.as_view(), name='total-orders'),
+      path('get-seller-orders/', GetSellerOrders.as_view(), name='get-seller-orders'),
+
+      #super-admin
+      path('superadmin/customers/', AdminTotalCustomerView.as_view(), name='total-customer'),
+      path('superadmin/revenues/', AdminTotalRevenueView.as_view(), name='total-revenue'),
+      path('superadmin/', AdminTotalOrderView.as_view(), name='total-orders'),
+
      
 ]
-# urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-# urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
