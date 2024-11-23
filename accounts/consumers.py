@@ -1,3 +1,4 @@
+from datetime import datetime
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
@@ -6,6 +7,10 @@ from channels.db import database_sync_to_async
 from django.contrib.auth.models import User
 import json
 from django.shortcuts import get_object_or_404
+from orders.models import Notification
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 
 class OrderNotificationConsumer(AsyncWebsocketConsumer):
 
@@ -71,6 +76,34 @@ class OrderNotificationConsumer(AsyncWebsocketConsumer):
     async def send_notification(self, event):
         message = event["message"]
         await self.send(text_data=json.dumps({"message": message}))
+
+
+
+def store_notification(user, message):
+    """Store the notification in the database."""
+    Notification.objects.create(
+        user=user,
+        message=message,
+    )
+
+
+def send_message(item, order):
+    channel_layer = get_channel_layer()
+    user_group = f"{item.product.vendor.profile.user_type}_{item.product.vendor.id}"
+    async_to_sync(channel_layer.group_send)(
+        user_group,
+        {"type": "send_notification", "message": f"New order placed with ID {order.order_number}"}
+    )
+
+
+def send_message_to_customer(user, order):
+    channel_layer = get_channel_layer()
+    user_group = f"{order.order.user.profile.user_type}_{order.order.user.id}"
+    async_to_sync(channel_layer.group_send)(
+        user_group,
+        {"type": "send_notification", "message": f"Your order has confirmed {order.order.order_number}"}
+    )
+
 
 
 

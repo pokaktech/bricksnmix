@@ -1,7 +1,9 @@
 from django.db.models import Sum
 
 from products.models import Product
-from orders.models import OrderItem
+from orders.models import *
+from orders.serializers import NotificationSerializer
+from accounts.consumers import store_notification, send_message_to_customer
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -249,4 +251,47 @@ class SellerTotalCustomerView(APIView):
             return Response({
                 'Sttaus': '1',
                 'message': "You are not a seller"
+            })
+        
+        
+
+class NotificationView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        notifications = Notification.objects.filter(user=request.user)
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response({
+            'Status': '1',
+            'message': 'Success',
+            'Data':  serializer.data
+        })
+    
+
+
+class ConfirmOrder(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        user=request.user
+        order_number = request.data.get('order_number', None)
+        product_id = request.data.get('product_id', None)
+
+        if not order_number or not product_id:
+            return Response({
+                'Status': '0',
+                'message': 'You must provide order_number and product_id'
+            })
+        try:
+            pending_orders = OrderItem.objects.filter(product__vendor=user, status='0').first()
+            pending_orders.status = '1'
+            pending_orders.save()
+            send_message_to_customer(user, pending_orders)
+            store_notification(user=pending_orders.order.user, message=f"Your order has confirmed {pending_orders.order.order_number}")
+            return Response({
+                'Status': '1',
+                'message': 'Order has Confirmed'
+            })
+        except:
+            return Response({
+                'Status': '0',
+                'message': 'Order not found'
             })

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Cart, CartItem, OrderItem, OrderProductImage, CustomerOrder
+from .models import Cart, CartItem, OrderItem, OrderProductImage, CustomerOrder, Notification
 
 
 
@@ -45,3 +45,8 @@ class CustomerOrderSerializer(serializers.ModelSerializer):
         fields = ['total_price', 'delivery_charge', 'net_total', 
                   'order_number', 'delivery_address', 'tracking_number', 
                   'carrier', 'items']
+        
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['message', 'is_read']

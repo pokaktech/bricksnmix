@@ -3,6 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404
 
+from asgiref.sync import async_to_sync
 
 
 from orders.models import *
@@ -10,7 +11,7 @@ from orders.serializers import *
 from products.models import Product, Productimg
 from products.serializers import ProductSerializer
 from accounts.models import Profile
-
+from accounts.consumers import store_notification, send_message
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -18,6 +19,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import TokenAuthentication
 from rest_framework import status
 
+from channels.layers import get_channel_layer
 
 
 
@@ -139,7 +141,6 @@ class PlaceOrderView(APIView):
                 order_number=order_number,
                 delivery_address=delivery_address,
             )
-            print(delivery_address)
 
             # Create Order Items with images
             # products = Product.objects.all()  # Fetch some products (you can change logic here)
@@ -162,7 +163,12 @@ class PlaceOrderView(APIView):
                         order_item=order_item,
                         image=img.image  # Use the image from the product's images
                     )
+                send_message(item, order)
+                store_notification(user=item.product.vendor, message=f"New order placed with ID {order.order_number}")
             cart_items.delete()
+            
+            
+            
             # Serialize and return the order
             serializer = CustomerOrderSerializer(order)
             return Response({"Status": "1", "message": "Success", "Data": serializer.data}, status=status.HTTP_201_CREATED)
@@ -534,6 +540,9 @@ class UpdateCart(APIView):
             "delivery_charge": 0.0,
             "Data": [product_data]
         }, status=status.HTTP_200_OK)
+
+
+
 
 
 

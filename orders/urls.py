@@ -21,6 +21,8 @@ urlpatterns = [
       path('seller/revenue/', SellerTotalRevenueView.as_view(), name='total-revenue'),
       path('seller/', SellerTotalOrderView.as_view(), name='total-orders'),
       path('get-seller-orders/', GetSellerOrders.as_view(), name='get-seller-orders'),
+      path('notifications/', NotificationView.as_view(), name='notifications'),
+      path('confirm-order/', ConfirmOrder.as_view(), name='confirm-order'),
 
       #super-admin
       path('superadmin/customers/', AdminTotalCustomerView.as_view(), name='total-customer'),
