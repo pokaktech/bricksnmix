@@ -24,6 +24,7 @@ urlpatterns = [
     path('brand/', CustomerBrandListView.as_view(), name='brand-list'),
     path('brand/<int:pk>/', CustomerBrandDetailView.as_view(), name='brand-detail'),
 
+    path('trending/', TrendingProductAPIView.as_view(), name='trending-products'),
     path('fast-moving/', FastMovingProductsAPIView.as_view(), name='fast-moving-products'),
     path('<int:product_id>/minimum-quantity/', ProductMinimumQuantityView.as_view(), name='product-minimum-quantity'),
     path('reviews/<int:product_id>/', ProductReviewList.as_view(), name='product_reviews'),

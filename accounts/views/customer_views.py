@@ -361,7 +361,9 @@ class CustomAuthToken(ObtainAuthToken):
             })
         
     def merge_cart(self, user):
-        session_id = self.request.session.session_key
+        session_id = self.request.headers.get('Session-Id', None)
+        if not session_id:
+            session_id = self.request.session.session_key
         anonymous_cart = Cart.objects.filter(session_id=session_id, user=None).first()
 
         if anonymous_cart:
@@ -377,7 +379,9 @@ class CustomAuthToken(ObtainAuthToken):
             anonymous_cart.delete()
 
     def merge_wishlist(self, user):
-        session_id = self.request.session.session_key
+        session_id = self.request.headers.get('Session-Id', None)
+        if not session_id:
+            session_id = self.request.session.session_key
         anonymous_wishlist = Wishlist.objects.filter(session_id=session_id, user=None).first()
 
         if anonymous_wishlist:
