@@ -1,36 +1,22 @@
-
+from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
-
 from django.utils.decorators import method_decorator
+from django.shortcuts import get_object_or_404
 
-from products.models import Productimg
+
+
+from orders.models import *
+from orders.serializers import *
+from products.models import Product, Productimg
 from products.serializers import ProductSerializer
-
 from accounts.models import Profile
-
-
-
 
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-
-from rest_framework import status
-from ..models import Product, Cart, CartItem, OrderProductImage
-from ..models import CustomerOrder, OrderItem
-from ..serializers import CustomerOrderSerializer
-from django.utils.crypto import get_random_string
-
-
-
-
 from rest_framework.authentication import TokenAuthentication
-
-
-
-
-
+from rest_framework import status
 
 
 
@@ -121,12 +107,16 @@ class PlaceOrderView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     def post(self, request, format=None):
-        user = request.user  # Assuming the user is authenticated
+        user = request.user
 
         full_cart = get_cart_item(request)
-        print("dsdsd", full_cart['delivery_charge'])
         profile = Profile.objects.get(user=user)
         delivery_address = profile.default_address
+        if not delivery_address:
+            try:
+                delivery_address = DeliveryAddress.objects.filter(user=user).first()
+            except:
+                return Response({"Status": "0", "message": "You have to add delivery address"})
 
         try:
             cart = Cart.objects.get(user=user)
@@ -143,25 +133,26 @@ class PlaceOrderView(APIView):
             order = CustomerOrder.objects.create(
                 user=user,
                 # status='1',  # Ordered
-                total_price= full_cart['offer_price'],  # Set any dummy price or calculate from cart
-                delivery_charge= full_cart['delivery_charge'],  # Dummy delivery charge
+                total_price= full_cart['offer_price'], # Calculate from cart
+                delivery_charge= full_cart['delivery_charge'],
                 net_total= full_cart['total_price'],  # Total price + delivery charge
-                payment_type='COD',  # Dummy payment type
                 order_number=order_number,
                 delivery_address=delivery_address,
-                payment_status='Pending'
             )
+            print(delivery_address)
 
             # Create Order Items with images
-            products = Product.objects.all()  # Fetch some products (you can change logic here)
+            # products = Product.objects.all()  # Fetch some products (you can change logic here)
 
             for item in cart_items:
                 # quantity = item.quantity  # Example quantity
                 order_item = OrderItem.objects.create(
                     order=order,
-                    status='1',
+                    status='0',
+                    payment_type='COD',
                     product=item.product,
                     quantity=item.quantity,
+                    payment_status='Pending',
                     price=item.product.price,  # Use product price or custom price
                 )
 
@@ -215,9 +206,7 @@ class AllOrdersView(APIView):
         for item in order_items:
             product_data = ProductSerializer(item.product).data
             product_data['order_number'] = item.order.order_number
-            # product_data['status'] = item.order.get_status_display()
             product_data['order_status'] = item.status
-            product_data['is_approved'] = item.is_approved
             product_data['delivery_from'] = item.product.vendor.profile.address if item.product.vendor else "Unknown"
             product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
             product_data['delivery_date'] = item.estimated_delivery_date().strftime("%d %b %Y")
@@ -230,7 +219,7 @@ class AllOrdersView(APIView):
                                        "mobile_number": item.order.delivery_address.mobile}]
             delivery_charge = item.product.delivery_charge if item.quantity < item.product.min_order_quantity else 0
             product_data['subtotal'] = item.quantity * item.price + delivery_charge
-            product_data['payment_type'] = item.order.payment_type
+            product_data['payment_type'] = item.payment_type
 
             response_data.append(product_data)
 
@@ -260,7 +249,7 @@ class PendingOrdersView(APIView):
             }, status=status.HTTP_200_OK)
 
         # Get all the order items related to the user's orders
-        order_items = OrderItem.objects.filter(order__in=orders, is_approved=False)
+        order_items = OrderItem.objects.filter(order__in=orders, status="0")
 
         if not order_items.exists():
             return Response({
@@ -275,7 +264,6 @@ class PendingOrdersView(APIView):
             product_data = ProductSerializer(item.product).data
             product_data['order_number'] = item.order.order_number
             product_data['order_status'] = item.status
-            product_data['is_approved'] = item.is_approved
             product_data['delivery_from'] = item.product.vendor.profile.address if item.product.vendor else "Unknown"
             product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
             product_data['delivery_date'] = item.estimated_delivery_date().strftime("%d %b %Y")
@@ -288,7 +276,7 @@ class PendingOrdersView(APIView):
                                        "mobile_number": item.order.delivery_address.mobile}]
             delivery_charge = item.product.delivery_charge if item.quantity < item.product.min_order_quantity else 0
             product_data['subtotal'] = item.quantity * item.price + delivery_charge
-            product_data['payment_type'] = item.order.payment_type
+            product_data['payment_type'] = item.payment_type
 
             response_data.append(product_data)
 
@@ -316,8 +304,7 @@ class DeliveredOrdersView(APIView):
             }, status=status.HTTP_200_OK)
 
         # Get all the order items related to the user's orders
-        order_items = OrderItem.objects.filter(order__in=orders, status="2", is_approved=True)
-        print("ppppp", order_items)
+        order_items = OrderItem.objects.filter(order__in=orders, status="3")
 
         if not order_items.exists():
             return Response({
@@ -332,7 +319,7 @@ class DeliveredOrdersView(APIView):
             product_data = ProductSerializer(item.product).data
             product_data['order_number'] = item.order.order_number
             product_data['order_status'] = item.status
-            product_data['is_approved'] = item.is_approved
+            # product_data['is_approved'] = item.is_approved
             product_data['delivery_from'] = item.product.vendor.profile.address if item.product.vendor else "Unknown"
             product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
             product_data['delivery_date'] = item.estimated_delivery_date().strftime("%d %b %Y")
@@ -345,7 +332,7 @@ class DeliveredOrdersView(APIView):
                                        "mobile_number": item.order.delivery_address.mobile}]
             delivery_charge = item.product.delivery_charge if item.quantity < item.product.min_order_quantity else 0
             product_data['subtotal'] = item.quantity * item.price + delivery_charge
-            product_data['payment_type'] = item.order.payment_type
+            product_data['payment_type'] = item.payment_type
 
             response_data.append(product_data)
 

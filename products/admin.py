@@ -3,8 +3,8 @@ from .models import *
 
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'category', 'price', 'offer_percent', 'brand', 'actual_price', 'stock')
-    list_filter = ('category', 'price', 'brand')
+    list_display = ('id', 'vendor', 'name', 'category', 'price', 'offer_percent', 'brand', 'actual_price', 'stock')
+    list_filter = ('category', 'price', 'brand', 'vendor')
     search_fields = ('name', 'description')
     ordering = ('-price',)
     # readonly_fields = ('product_rating',)

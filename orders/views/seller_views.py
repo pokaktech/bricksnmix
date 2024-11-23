@@ -34,7 +34,7 @@ class GetSellerOrders(APIView):
                     "name": item.product.name,
                     "price": item.product.price,
                     "quantity": item.quantity,
-                    "delivery_from": item.order.delivery_address.city
+                    "order_from": item.order.delivery_address.city
                 })
             # return Response({'Status: 1', 'message': 'Success', })
             return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
