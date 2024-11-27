@@ -8,7 +8,7 @@ from asgiref.sync import async_to_sync
 
 from orders.models import *
 from orders.serializers import *
-from products.models import Product, Productimg
+from products.models import Product, Productimg, Wishlist, WishlistItem
 from products.serializers import ProductSerializer
 from accounts.models import Profile
 from accounts.consumers import store_notification, send_message
@@ -541,6 +541,57 @@ class UpdateCart(APIView):
             "Data": [product_data]
         }, status=status.HTTP_200_OK)
 
+
+
+
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CartFromWishlistView(APIView):
+    permission_classes = [AllowAny] 
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        quantity = request.data.get('quantity')
+        
+
+        if not product_id or not quantity:
+            return Response({'Status': '0', 'message': 'Product ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user if request.user.is_authenticated else None
+
+        session_id = request.headers.get('Session-Id', None)
+        if not session_id:
+            if not request.session.session_key:
+                request.session['initialized'] = True
+                request.session.save()
+            session_id = request.session.session_key
+        cart, created = Cart.objects.get_or_create(user=user) if user else Cart.objects.get_or_create(session_id=session_id)
+
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    
+        try:
+            wishlist = Wishlist.objects.get(user=user) if user else Wishlist.objects.get(session_id=session_id)
+            try:
+                wishlist_item = WishlistItem.objects.get(wishlist=wishlist, product=product_id)
+                cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+                if created:
+                    cart_item.quantity = quantity
+                else:
+                    cart_item.quantity += quantity
+
+                cart_item.save()
+                wishlist.delete()
+
+                return Response({"Status": "1", "message": "Product moved to cart succesfully"}, status=status.HTTP_201_CREATED)
+            except:
+                return Response({"Status": '0', "message": "Product not found in wishlist"})
+        except:
+            return Response({"Status": '0', "message": "No wishlist found"})
 
 
 

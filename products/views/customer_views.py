@@ -187,8 +187,6 @@ class BrandProductSearchView(APIView):
 class ProductMinimumQuantityView(APIView):
     def get(self, request, product_id):
         try:
-            product_id = request.data["product_id"]
-            print(product_id)
             try:
                 product = Product.objects.get(id=product_id)
             except:
@@ -242,9 +240,11 @@ class WishlistView(APIView):
             items.append({
                 'product_id': item.product.id,
                 'product_name': item.product.name,
+                'description': item.product.description,
                 'product_images': f"/media/{product_image}" if product_image != None else None,
                 'price_per_item': item.product.price,
                 'delivery_charge': item.product.delivery_charge,
+                'offer_percent': item.product.offer_percent,
                 'min_order_quantity': item.product.min_order_quantity,
                 'min_order_quantity_two': item.product.min_order_quantity_two,
                 'min_order_quantity_three': item.product.min_order_quantity_three,
@@ -282,7 +282,7 @@ class WishlistView(APIView):
 
         # Get or create the user's wishlist
 
-        session_id = request.session.session_key  # Get the session key
+        # session_id = request.session.session_key  # Get the session key
         wishlist, created = Wishlist.objects.get_or_create(user=user) if user else Wishlist.objects.get_or_create(session_id=session_id)
 
         # Add the product to the wishlist
@@ -357,7 +357,7 @@ class WishListFromCartView(APIView):
 
         return Response({
             'Status': '1',
-            'Message': 'Product added to wishlist'
+            'Message': 'Product moved to wishlist succesfully'
         }, status=status.HTTP_201_CREATED)
     
 

@@ -20,10 +20,17 @@ class OrderNotificationConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         # Extract token from query params or headers
-        try:
-            token = self.scope['query_string'].decode('utf-8').split('=')[1]  # Example: ?token=abc123
-        except:
-            token = ""
+        # try:
+        #     token = self.scope['query_string'].decode('utf-8').split('=')[1]  # Example: ?token=abc123
+        # except:
+        #     token = ""
+        headers = dict(self.scope.get("headers", []))
+        token = None
+
+        if b"authorization" in headers:
+            auth_header = headers[b"authorization"].decode("utf-8")
+            if auth_header.startswith("Token "):
+                token = auth_header.split("Token ")[1]
         
         user = await self.authenticate_user(token)
 

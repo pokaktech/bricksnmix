@@ -33,10 +33,14 @@ class GetSellerOrders(APIView):
             data = []
             for item in order_items:
                 data.append({
+                    "customer_name": item.order.user.username,
+                    "time": item.order.created_at.strftime('%H:%M:%S'),
+                    "date": item.order.created_at.strftime('%Y-%m-%d'),
                     "name": item.product.name,
-                    "price": item.product.price,
+                    "place": item.order.delivery_address.city,
                     "quantity": item.quantity,
-                    "order_from": item.order.delivery_address.city
+                    "status": item.status,
+                    "price": item.product.price
                 })
             # return Response({'Status: 1', 'message': 'Success', })
             return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
