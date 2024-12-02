@@ -405,7 +405,7 @@ class AddProductReview(APIView):
             return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Check if the product was in the user's delivered orders
-        delivered_items = OrderItem.objects.filter(order__user=user, status='2', product=product)
+        delivered_items = OrderItem.objects.filter(order__user=user, status='3', product=product)
         deli = OrderItem.objects.filter(order__user=user, product=product)
         print(deli.exists())
         if not delivered_items.exists():

@@ -585,7 +585,8 @@ class CartFromWishlistView(APIView):
                     cart_item.quantity += quantity
 
                 cart_item.save()
-                wishlist.delete()
+                wishlist_item.delete()
+                # wishlist.delete()
 
                 return Response({"Status": "1", "message": "Product moved to cart succesfully"}, status=status.HTTP_201_CREATED)
             except:
