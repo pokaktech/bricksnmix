@@ -16,7 +16,7 @@ from datetime import timedelta, datetime
 
 
 
-class GetSellerOrders(APIView):
+class SellerAllOrders(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
 
@@ -30,6 +30,142 @@ class GetSellerOrders(APIView):
         try:
             # If a specific product ID is provided, fetch the product and check if it belongs to the seller
             order_items = OrderItem.objects.filter(product__vendor=user)
+            data = []
+            for item in order_items:
+                data.append({
+                    "customer_name": item.order.user.username,
+                    "time": item.order.created_at.strftime('%H:%M:%S'),
+                    "date": item.order.created_at.strftime('%Y-%m-%d'),
+                    "name": item.product.name,
+                    "place": item.order.delivery_address.city,
+                    "quantity": item.quantity,
+                    "status": item.status,
+                    "price": item.product.price
+                })
+            # return Response({'Status: 1', 'message': 'Success', })
+            return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found or you do not own this product.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+class SellerPendingOrders(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get(self, request):
+        user = request.user
+
+        # Check if the user is a seller
+        if user.profile.user_type != 'seller':
+            return Response({'Status': '0', 'message': 'You are not authorized to view products as you are not a seller.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            # If a specific product ID is provided, fetch the product and check if it belongs to the seller
+            order_items = OrderItem.objects.filter(product__vendor=user, status='0')
+            data = []
+            for item in order_items:
+                data.append({
+                    "customer_name": item.order.user.username,
+                    "time": item.order.created_at.strftime('%H:%M:%S'),
+                    "date": item.order.created_at.strftime('%Y-%m-%d'),
+                    "name": item.product.name,
+                    "place": item.order.delivery_address.city,
+                    "quantity": item.quantity,
+                    "status": item.status,
+                    "price": item.product.price
+                })
+            # return Response({'Status: 1', 'message': 'Success', })
+            return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found or you do not own this product.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+    
+class SellerConfirmedOrders(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get(self, request):
+        user = request.user
+
+        # Check if the user is a seller
+        if user.profile.user_type != 'seller':
+            return Response({'Status': '0', 'message': 'You are not authorized to view products as you are not a seller.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            # If a specific product ID is provided, fetch the product and check if it belongs to the seller
+            order_items = OrderItem.objects.filter(product__vendor=user, status='1')
+            data = []
+            for item in order_items:
+                data.append({
+                    "customer_name": item.order.user.username,
+                    "time": item.order.created_at.strftime('%H:%M:%S'),
+                    "date": item.order.created_at.strftime('%Y-%m-%d'),
+                    "name": item.product.name,
+                    "place": item.order.delivery_address.city,
+                    "quantity": item.quantity,
+                    "status": item.status,
+                    "price": item.product.price
+                })
+            # return Response({'Status: 1', 'message': 'Success', })
+            return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found or you do not own this product.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+    
+class SellerShippedOrders(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get(self, request):
+        user = request.user
+
+        # Check if the user is a seller
+        if user.profile.user_type != 'seller':
+            return Response({'Status': '0', 'message': 'You are not authorized to view products as you are not a seller.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            # If a specific product ID is provided, fetch the product and check if it belongs to the seller
+            order_items = OrderItem.objects.filter(product__vendor=user, status='2')
+            data = []
+            for item in order_items:
+                data.append({
+                    "customer_name": item.order.user.username,
+                    "time": item.order.created_at.strftime('%H:%M:%S'),
+                    "date": item.order.created_at.strftime('%Y-%m-%d'),
+                    "name": item.product.name,
+                    "place": item.order.delivery_address.city,
+                    "quantity": item.quantity,
+                    "status": item.status,
+                    "price": item.product.price
+                })
+            # return Response({'Status: 1', 'message': 'Success', })
+            return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found or you do not own this product.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+class SellerDeliveredOrders(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get(self, request):
+        user = request.user
+
+        # Check if the user is a seller
+        if user.profile.user_type != 'seller':
+            return Response({'Status': '0', 'message': 'You are not authorized to view products as you are not a seller.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            # If a specific product ID is provided, fetch the product and check if it belongs to the seller
+            order_items = OrderItem.objects.filter(product__vendor=user, status='3')
             data = []
             for item in order_items:
                 data.append({
@@ -272,27 +408,29 @@ class NotificationView(APIView):
     
 
 
-class ConfirmOrder(APIView):
+class ChangeOrderStatus(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
         user=request.user
         order_number = request.data.get('order_number', None)
         product_id = request.data.get('product_id', None)
+        status = request.data.get('status', None)
 
-        if not order_number or not product_id:
+        if not order_number or not product_id or not status:
             return Response({
                 'Status': '0',
-                'message': 'You must provide order_number and product_id'
+                'message': 'You must provide order_number, product_id, and status'
             })
         try:
-            pending_orders = OrderItem.objects.filter(product__vendor=user, status='0').first()
-            pending_orders.status = '1'
+            # product_data['status'] = item.order.get_status_display()
+            pending_orders = OrderItem.objects.filter(product__vendor=user, order__order_number=order_number).first()
+            pending_orders.status = status
             pending_orders.save()
             send_message_to_customer(user, pending_orders)
-            store_notification(user=pending_orders.order.user, message=f"Your order has confirmed {pending_orders.order.order_number}")
+            store_notification(user=pending_orders.order.user, message=f"Your order has {pending_orders.get_status_display()} {pending_orders.order.order_number}")
             return Response({
                 'Status': '1',
-                'message': 'Order has Confirmed'
+                'message': f'The status of the order has changed to {pending_orders.get_status_display()}'
             })
         except:
             return Response({

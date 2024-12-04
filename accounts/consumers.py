@@ -73,12 +73,16 @@ class OrderNotificationConsumer(AsyncWebsocketConsumer):
 
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
-        # Handle incoming messages (e.g., broadcast to a group)
-        await self.channel_layer.group_send(
-            self.user_group,
-            {"type": "send_notification", "message": data.get("message")},
-        )
+        try:
+            print("message:", text_data)
+            data = json.loads(text_data)
+            # Handle incoming messages (e.g., broadcast to a group)
+            await self.channel_layer.group_send(
+                self.user_group,
+                {"type": "send_notification", "message": data.get("message")},
+            )
+        except Exception as e:
+            print("This is error:", e)
 
     async def send_notification(self, event):
         message = event["message"]

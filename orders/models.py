@@ -51,7 +51,7 @@ class CustomerOrder(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Order {self.id} by {self.user.username}"
+        return f"Order {self.order_number} by {self.user.username}"
 
 
         
@@ -76,7 +76,7 @@ class OrderItem(models.Model):
     delivered_at = models.DateField(null=True, blank=True)  # Actual delivery date
 
     def __str__(self):
-        return f"{self.quantity} of {self.product.name}"
+        return f"{self.order.order_number} of {self.quantity} of {self.product.name}"
     
     def estimated_delivery_date(self):
         if self.delivered_at:

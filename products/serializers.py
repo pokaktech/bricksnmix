@@ -138,7 +138,11 @@ class ProductSerializer(serializers.ModelSerializer):
             return False
 
         user = request.user if request.user.is_authenticated else None
-        session_id = request.session.session_key
+        # session_id = request.session.session_key
+        session_id = request.headers.get('Session-Id', None)
+        if not session_id:
+            session_id = request.session.session_key
+        print("Session_id", session_id)
 
         # Check if the product is wishlisted for authenticated users
         if user:

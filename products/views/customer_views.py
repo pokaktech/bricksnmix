@@ -39,7 +39,7 @@ class TrendingProductAPIView(APIView):
         ).order_by('-order_count')[:10]  # Get top 10 trending products
         
         # Serialize the trending products
-        serializer = ProductSerializer(trending_products, many=True)
+        serializer = ProductSerializer(trending_products, many=True, context={'request': request})
         
         return Response({"Status": "1", "message": "Success", "Data": serializer.data}, status=status.HTTP_200_OK)
 
@@ -85,7 +85,7 @@ class ProductDetail(APIView):
 class TrendingBrandsView(APIView):
     def get(self, request, format=None):
         brands = Brand.objects.all()
-        serializer = BrandSerializer(brands, many=True)
+        serializer = BrandSerializer(brands, many=True, context={'request': request})
         return Response({
             "Status": "1",
             "message": "Success",
@@ -159,7 +159,7 @@ class ProductSearchView(APIView):
         search_word = request.data.get('search_word', '')
         if search_word:
             products = Product.objects.filter(name__icontains=search_word)
-            serializer = ProductSerializer(products, many=True)
+            serializer = ProductSerializer(products, many=True, context={'request': request})
             return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data})
         return Response({'Status': '0', 'message': 'Search word not provided'})
     
@@ -175,7 +175,7 @@ class BrandProductSearchView(APIView):
         if search_word:
             brand = get_object_or_404(Brand, id=brand_id)
             products = Product.objects.filter(brand=brand, name__icontains=search_word)
-            serializer = ProductSerializer(products, many=True)
+            serializer = ProductSerializer(products, many=True, context={'request': request})
             return Response({'Status': '1', 'message': 'Success', 'Data': serializer.data})
         return Response({'Status': '0', 'message': 'Search word not provided'})
     
@@ -431,7 +431,7 @@ class SimilarProductsView(APIView):
         try:
             product = Product.objects.get(id=product_id)
             similar_product = Product.objects.filter(category=product.category).exclude(id=product.id)
-            serializer = ProductSerializer(similar_product, many=True)
+            serializer = ProductSerializer(similar_product, many=True, context={'request': request})
             return Response({
                 'Status': 'Ok',
                 'message': 'Success',

@@ -49,4 +49,4 @@ class CustomerOrderSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = ['message', 'is_read']
+        fields = ['message', 'is_read', 'created_at']

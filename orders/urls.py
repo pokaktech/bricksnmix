@@ -21,9 +21,13 @@ urlpatterns = [
       path('seller/customers/', SellerTotalCustomerView.as_view(), name='total-customer'),
       path('seller/revenue/', SellerTotalRevenueView.as_view(), name='total-revenue'),
       path('seller/', SellerTotalOrderView.as_view(), name='total-orders'),
-      path('get-seller-orders/', GetSellerOrders.as_view(), name='get-seller-orders'),
+      path('seller/all/', SellerAllOrders.as_view(), name='get-seller-orders'),
+      path('seller/pending/', SellerPendingOrders.as_view(), name='get-seller-orders'),
+      path('seller/confirmed/', SellerConfirmedOrders.as_view(), name='get-seller-orders'),
+      path('seller/shipped/', SellerShippedOrders.as_view(), name='get-seller-orders'),
+      path('seller/delivered/', SellerDeliveredOrders.as_view(), name='get-seller-orders'),
       path('notifications/', NotificationView.as_view(), name='notifications'),
-      path('confirm-order/', ConfirmOrder.as_view(), name='confirm-order'),
+      path('seller/change-status/', ChangeOrderStatus.as_view(), name='change-order-status'),
 
       #super-admin
       path('superadmin/customers/', AdminTotalCustomerView.as_view(), name='total-customer'),
