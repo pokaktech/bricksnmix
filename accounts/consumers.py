@@ -90,10 +90,11 @@ class OrderNotificationConsumer(AsyncWebsocketConsumer):
 
 
 
-def store_notification(user, message):
+def store_notification(user, heading, message):
     """Store the notification in the database."""
     Notification.objects.create(
         user=user,
+        heading=heading,
         message=message,
     )
 
@@ -103,7 +104,7 @@ def send_message(item, order):
     user_group = f"{item.product.vendor.profile.user_type}_{item.product.vendor.id}"
     async_to_sync(channel_layer.group_send)(
         user_group,
-        {"type": "send_notification", "message": f"New order placed with ID {order.order_number}"}
+        {"type": "send_notification", "heading": "Order Status Changed", "message": f"New order placed with ID {order.order_number}"}
     )
 
 
@@ -112,7 +113,7 @@ def send_message_to_customer(user, order):
     user_group = f"{order.order.user.profile.user_type}_{order.order.user.id}"
     async_to_sync(channel_layer.group_send)(
         user_group,
-        {"type": "send_notification", "message": f"Your order has confirmed {order.order.order_number}"}
+        {"type": "send_notification", "heading": "Order Status Changed", "message": f"Your order has confirmed {order.order.order_number}"}
     )
 
 

@@ -97,6 +97,7 @@ class OrderProductImage(models.Model):
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    heading = models.CharField(max_length=50)
     message = models.CharField(max_length=500)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=now)

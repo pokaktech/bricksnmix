@@ -709,6 +709,7 @@ class WebCreateSessionIdView(APIView):
 class CreateSessionIdView(APIView):
     def get(self, request):
         # Create a session if it doesn't exist
+        user = request.user if request.user.is_authenticated else None
         session_id = request.headers.get('Session-Id', None)
         if not session_id:
             if not request.session.session_key:
@@ -716,7 +717,8 @@ class CreateSessionIdView(APIView):
             session_id = request.session.session_key
         
         try:
-            cart = Cart.objects.get(session_id=session_id)
+            cart = Cart.objects.get(user=user) if user else Cart.objects.get(session_id=session_id)
+            # cart = Cart.objects.get(session_id=session_id)
             cart_items = CartItem.objects.filter(cart=cart).count()
         except Cart.DoesNotExist:
             cart_items = 0

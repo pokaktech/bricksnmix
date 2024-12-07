@@ -1,4 +1,5 @@
-from django.db.models import Sum
+from django.db.models import Sum, Count
+
 
 from products.models import Product
 from orders.models import *
@@ -395,16 +396,7 @@ class SellerTotalCustomerView(APIView):
         
         
 
-class NotificationView(APIView):
-    permission_classes = [IsAuthenticated]
-    def get(self, request):
-        notifications = Notification.objects.filter(user=request.user)
-        serializer = NotificationSerializer(notifications, many=True)
-        return Response({
-            'Status': '1',
-            'message': 'Success',
-            'Data':  serializer.data
-        })
+
     
 
 
@@ -412,28 +404,71 @@ class ChangeOrderStatus(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
         user=request.user
-        order_number = request.data.get('order_number', None)
-        product_id = request.data.get('product_id', None)
-        status = request.data.get('status', None)
+        if user.profile.user_type == "seller":
+            order_number = request.data.get('order_number', None)
+            product_id = request.data.get('product_id', None)
+            status = request.data.get('status', None)
 
-        if not order_number or not product_id or not status:
-            return Response({
-                'Status': '0',
-                'message': 'You must provide order_number, product_id, and status'
-            })
-        try:
-            # product_data['status'] = item.order.get_status_display()
-            pending_orders = OrderItem.objects.filter(product__vendor=user, order__order_number=order_number).first()
-            pending_orders.status = status
-            pending_orders.save()
-            send_message_to_customer(user, pending_orders)
-            store_notification(user=pending_orders.order.user, message=f"Your order has {pending_orders.get_status_display()} {pending_orders.order.order_number}")
+            if not order_number or not product_id or not status:
+                return Response({
+                    'Status': '0',
+                    'message': 'You must provide order_number, product_id, and status'
+                })
+            try:
+                # product_data['status'] = item.order.get_status_display()
+                pending_orders = OrderItem.objects.filter(product__vendor=user, order__order_number=order_number).first()
+                pending_orders.status = status
+                pending_orders.save()
+                send_message_to_customer(user, pending_orders)
+                store_notification(user=pending_orders.order.user, heading="Order Status Changed", message=f"Your order has {pending_orders.get_status_display()} {pending_orders.order.order_number}")
+                return Response({
+                    'Status': '1',
+                    'message': f'The status of the order has changed to {pending_orders.get_status_display()}'
+                })
+            except:
+                return Response({
+                    'Status': '0',
+                    'message': 'Order not found'
+                })
+        else:
+            return Response({'Status': '0', 'message': 'You are not a seller'})
+        
+
+
+
+class SellerRevenueSalesView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        user = request.user  # Logged-in seller
+        if user.profile.user_type == "seller":
+            seller_orders = CustomerOrder.objects.filter(items__product__vendor=user).distinct()
+
+            months = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ]
+
+            # Prepare a list of objects for each month
+            graph_data = []
+
+            for month_index, month_name in enumerate(months, start=1):
+                month_orders = seller_orders.filter(created_at__month=month_index)
+                revenue = month_orders.aggregate(total_revenue=Sum('items__price'))['total_revenue'] or 0
+                sales = month_orders.aggregate(total_sales=Count('items__id'))['total_sales'] or 0
+
+                graph_data.append({
+                    "month": month_name,
+                    "revenue": float(revenue),
+                    "sales": sales
+                })
+
             return Response({
                 'Status': '1',
-                'message': f'The status of the order has changed to {pending_orders.get_status_display()}'
+                'message': 'Success',
+                'Data': graph_data
             })
-        except:
+        else:
             return Response({
-                'Status': '0',
-                'message': 'Order not found'
+                'Sttaus': '1',
+                'message': "You are not a seller"
             })

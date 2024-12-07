@@ -3,9 +3,18 @@ from django.urls import path
 from orders.views.customer_views import *
 from orders.views.superadmin_views import *
 from orders.views.seller_views import *
+from orders.views.common import *
 
 app_name = 'orders'
 urlpatterns = [
+    
+
+      #common
+
+      path('notifications/', NotificationView.as_view(), name='notifications'),
+      path('notifications/mark-as-read/<int:notification_id>/', NotificationMarkAsReadView.as_view(), name='notifications-mark-as-read'),
+
+      
       #customer
       path('', AllOrdersView.as_view(), name='all-orders'),
       path('pending/', PendingOrdersView.as_view(), name='pending-orders'),
@@ -20,13 +29,13 @@ urlpatterns = [
       #seller
       path('seller/customers/', SellerTotalCustomerView.as_view(), name='total-customer'),
       path('seller/revenue/', SellerTotalRevenueView.as_view(), name='total-revenue'),
+      path('seller/revenue-sales/', SellerRevenueSalesView.as_view(), name='seller-revenue-sales'),
       path('seller/', SellerTotalOrderView.as_view(), name='total-orders'),
       path('seller/all/', SellerAllOrders.as_view(), name='get-seller-orders'),
       path('seller/pending/', SellerPendingOrders.as_view(), name='get-seller-orders'),
       path('seller/confirmed/', SellerConfirmedOrders.as_view(), name='get-seller-orders'),
       path('seller/shipped/', SellerShippedOrders.as_view(), name='get-seller-orders'),
       path('seller/delivered/', SellerDeliveredOrders.as_view(), name='get-seller-orders'),
-      path('notifications/', NotificationView.as_view(), name='notifications'),
       path('seller/change-status/', ChangeOrderStatus.as_view(), name='change-order-status'),
 
       #super-admin
