@@ -1,11 +1,11 @@
 from django.contrib import admin
-from .models import Profile,BankAccount ,SocialLink, DeliveryAddress, SuperAdmin, TemporaryUserContact
+from .models import *
 # Register your models here.
 
 class ProfileAdmin(admin.ModelAdmin):
     #fields = ("","")
     # inlines = [ ]
-    list_display = ('id', 'user', 'phone', 'city', "country", "user_type", "company_name")
+    list_display = ('id', 'user', 'phone', 'city', "country", "user_type")
     # list_filter = ("status",)
     # list_editable = ()
     list_display_links = ("id", 'user', )
@@ -57,3 +57,5 @@ admin.site.register(SuperAdmin)
 admin.site.register(Profile,ProfileAdmin)
 admin.site.register(DeliveryAddress)
 admin.site.register(TemporaryUserContact)
+admin.site.register(Company)
+admin.site.register(AppFeedback)

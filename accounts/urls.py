@@ -35,9 +35,12 @@ urlpatterns = [
     path('addresses/', DeliveryAddressListCreateView.as_view(), name='address-list-create'),
     path('addresses/<int:pk>/', DeliveryAddressDetailView.as_view(), name='address-detail'),
 
+    path('app-feedback/create/', AppReviewCreateView.as_view(), name='app-review-create'),
+
     
     #Seller
     path('seller/signup/', SellerSignupView.as_view(), name='seller-signup'),
+    path('seller/company/', CompanyDetailsView.as_view(), name='company'),
 
     #common
     path('superadmin-contacts/', SuperAdminContactView.as_view(), name='superadmin-contacts'),
@@ -45,6 +48,8 @@ urlpatterns = [
     #superadmin
     path('superadmin/banners/', BannerCreateView.as_view(), name='create-banners'),
     path('superadmin/brand/', AddBrandView.as_view(), name='add-brand'),
+    path('superadmin/app-feedback/', AppFeedbackListView.as_view(), name='app-feedback-list'),
+    path('superadmin/app-feedback/overall-rating/', OverallFeedbackView.as_view(), name='app-overall-rating')
 
     
 ]

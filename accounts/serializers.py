@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from .models import DeliveryAddress
 from django.contrib.auth.models import User
-from .models import BankAccount, Profile
-from .models import SocialLink
+from .models import *
 from rest_framework.exceptions import ValidationError
 
 # class SubcategorySerializer(serializers.ModelSerializer):
@@ -74,10 +73,44 @@ class BankAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankAccount
         fields = '__all__'
+
+
+# class ProfileSerializer(serializers.ModelSerializer):
+#     # full_name = serializers.SerializerMethodField()
+#     username = serializers.CharField(source='user.username')
+#     email = serializers.CharField(source='user.email')
+#     class Meta:
+#         fields = ['username', 'mobile_number', 'email', 'address', 'post_code', 'city', 'state', 'country']
+#         model = Profile
+#         # exclude = ['id',]
+#     # def get_full_name(self, obj):
+#     #     return f"{obj.user.first_name} {obj.user.last_name}"
+
+
+
 class ProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username')
+    # full_name = serializers.SerializerMethodField()
+    email = serializers.CharField(source='user.email')  # Make the email editable through user
+
     class Meta:
+        fields = ['username', 'mobile_number', 'email', 'address', 'post_code', 'city', 'state', 'country']
         model = Profile
-        exclude = ['id', 'user']
+
+    def get_full_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}"
+
+    def update(self, instance, validated_data):
+        # Update the user instance (email and other fields)
+        user_data = validated_data.pop('user', {})
+        if 'email' in user_data:
+            instance.user.email = user_data['email']
+            instance.user.save()
+
+        # Update the profile instance
+        return super().update(instance, validated_data)
+
+
 class SocialLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialLink
@@ -117,23 +150,69 @@ class CustomerSignupSerializer(serializers.ModelSerializer):
         return user
     
 
+# class SellerSignupSerializer(serializers.ModelSerializer):
+#     confirm_password = serializers.CharField(write_only=True)
+
+#     class Meta:
+#         model = User
+#         fields = ['username', 'email', 'password', 'confirm_password']
+#         extra_kwargs = {
+#             'password': {'write_only': True}
+#         }
+
+#     def validate(self, data):
+#         if data['password'] != data['confirm_password']:
+#             raise ValidationError("Passwords do not match")
+#         return data
+
+#     def create(self, validated_data):
+#         # Remove confirm_password as it's not needed for creating the User
+#         validated_data.pop('confirm_password')
+
+#         # Create the user
+#         user = User.objects.create_user(
+#             username=validated_data['username'],
+#             email=validated_data['email'],
+#             password=validated_data['password']
+#         )
+
+#         # Automatically set the Profile's user_type to 'seller'
+#         user.profile.user_type = Profile.seller
+#         user.profile.save()
+
+#         return user
+    
+
+
+
+
+class CompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company
+        fields = ['name', 'location', 'mail_id', 'logo']
+
+
 class SellerSignupSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(write_only=True)
+    company = CompanySerializer()  # Nested serializer to capture company details
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'confirm_password']
+        fields = ['username', 'email', 'password', 'confirm_password', 'company']
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True},
+            'email': {'required': True}
         }
 
     def validate(self, data):
+        # Ensure passwords match
         if data['password'] != data['confirm_password']:
-            raise ValidationError("Passwords do not match")
+            raise serializers.ValidationError("Passwords do not match")
         return data
 
     def create(self, validated_data):
-        # Remove confirm_password as it's not needed for creating the User
+        # Extract and remove company details
+        company_data = validated_data.pop('company')
         validated_data.pop('confirm_password')
 
         # Create the user
@@ -147,7 +226,20 @@ class SellerSignupSerializer(serializers.ModelSerializer):
         user.profile.user_type = Profile.seller
         user.profile.save()
 
+        # Create the company and associate it with the vendor (user)
+        Company.objects.create(vendor=user, **company_data)
+
         return user
     
 
 
+class AppFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AppFeedback
+        fields = ['user', 'rating', 'review', 'created_at']
+        read_only_fields = ['user', 'created_at']  # User and created_at should be read-only
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5 stars.")
+        return value

@@ -37,8 +37,7 @@ class Profile(models.Model):
         upload_to='profile_pic/', blank=True, null=True, )
     user = models.OneToOneField(    
         User, on_delete=models.CASCADE)
-    # display_name = models.CharField(max_length=100, blank=True, null=True, )
-    bio = models.TextField(blank=True, null=True)
+    # bio = models.TextField(blank=True, null=True)
     mobile_number = models.CharField(max_length=100, blank=True, null=True, )
     address = models.CharField(max_length=100, blank=True, null=True, )
     city = models.CharField(max_length=100, blank=True, null=True, )
@@ -65,13 +64,12 @@ class Profile(models.Model):
 
     phone = models.CharField(max_length=20, blank=True, null=True)
     default_address = models.ForeignKey('DeliveryAddress', null=True, blank=True, on_delete=models.SET_NULL)
-    # type = models.CharField(max_length=10, choices=[('user', 'User'), ('seller', 'Seller')], blank=True, null=True)
-    gst = models.CharField(max_length=15, blank=True, null=True)
-    shopname = models.CharField(max_length=100, blank=True, null=True)
-    logoimage = models.ImageField(upload_to='logos/', blank=True, null=True)
-    company_name = models.CharField(max_length=100, blank=True, null=True)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    # gst = models.CharField(max_length=15, blank=True, null=True)
+    # shopname = models.CharField(max_length=100, blank=True, null=True)
+    # logoimage = models.ImageField(upload_to='logos/', blank=True, null=True)
+    # company_name = models.CharField(max_length=100, blank=True, null=True)
+    # latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    # longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     
     def __str__(self):
         return self.user.username if self.user else "No User"
@@ -106,6 +104,19 @@ def create_profile(sender, instance, created, **kwargs):
 
 
 post_save.connect(create_profile, sender=User)
+
+
+
+
+class Company(models.Model):
+    vendor = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
+    name = models.CharField(max_length=100)
+    location = models.CharField(max_length=100)
+    mail_id = models.EmailField()
+    logo = models.ImageField(upload_to='logos/', blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.vendor.username} and Company {self.name}"
 
 
 
@@ -169,4 +180,14 @@ class DeliveryAddress(models.Model):
 
 
 
+class AppFeedback(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)  # User who gives the review
+    rating = models.FloatField()
+    review = models.TextField(blank=True, null=True)  # Review comments
+    created_at = models.DateTimeField(auto_now_add=True)  # Timestamp when the review was created
 
+    def __str__(self):
+        return f"Review by {self.user.username} - {self.rating} stars"
+
+    class Meta:
+        ordering = ['-created_at']  # Show newest reviews first

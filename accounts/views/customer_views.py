@@ -14,8 +14,8 @@ import json
 from PIL import Image
 
 
-from accounts.models import Profile, TemporaryUserContact, SuperAdmin, DeliveryAddress
-from accounts.serializers import DeliveryAddressSerializer, ProfileSerializer, CustomerSignupSerializer
+from accounts.models import *
+from accounts.serializers import *
 from orders.models import Cart, CartItem
 from products.models import Banner, Wishlist, WishlistItem
 from products.serializers import BannerSerializer
@@ -443,7 +443,7 @@ class CustomerSignupView(APIView):
             if tempuser:
                 tempuser.delete()
         except:
-            print("No data")
+            pass
         serializer = CustomerSignupSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -735,3 +735,14 @@ class CreateSessionIdView(APIView):
 
     
 
+class AppReviewCreateView(generics.CreateAPIView):
+    serializer_class = AppFeedbackSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        # Attach the currently authenticated user to the review
+        serializer.save(user=self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        # Create the review
+        return self.create(request, *args, **kwargs)
