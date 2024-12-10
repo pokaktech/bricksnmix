@@ -237,6 +237,105 @@ class AllOrdersView(APIView):
     
 
 
+class OrderDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, order_number, product_id):
+        user = request.user
+
+
+        try:
+            # Get all the orders of the logged-in user
+            order = CustomerOrder.objects.get(user=user, order_number=order_number)
+            product = Product.objects.get(id=product_id)
+
+        except:
+            return Response({
+                'Status': '0',
+                'message': 'No orders found for this user',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            # Get all the order items related to the user's orders
+            order_item = OrderItem.objects.get(order=order, product=product)
+
+        except:
+            return Response({
+                'Status': '0',
+                'message': 'No products found for this user',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Prepare response data
+        response_data = []
+        # for item in order_item:
+        product_data = ProductSerializer(order_item.product).data
+        product_data['order_number'] = order_item.order.order_number
+        product_data['order_status'] = order_item.status
+        product_data['delivery_from'] = order_item.product.vendor.profile.address if order_item.product.vendor else "Unknown"
+        product_data['delivery_to'] = order_item.order.delivery_address.city if order_item.order.delivery_address else "Unknown"
+        product_data['delivery_date'] = order_item.estimated_delivery_date().strftime("%d %b %Y")
+        product_data['quantity'] = order_item.quantity
+        product_data['address'] = [{"name": order_item.order.delivery_address.name,
+                                    "house_name": order_item.order.delivery_address.housename,
+                                    "city": order_item.order.delivery_address.city,
+                                    "state": order_item.order.delivery_address.state,
+                                    "pincode": order_item.order.delivery_address.pincode,
+                                    "mobile_number": order_item.order.delivery_address.mobile}]
+        delivery_charge = order_item.product.delivery_charge if order_item.quantity < order_item.product.min_order_quantity else 0
+        product_data['subtotal'] = order_item.quantity * order_item.price + delivery_charge
+        product_data['payment_type'] = order_item.payment_type
+
+        response_data.append(product_data)
+
+        return Response({
+            'Status': '1',
+            'message': 'Products retrieved successfully',
+            'Data': response_data
+        }, status=status.HTTP_200_OK)
+    
+
+
+class CancelSingleProductOrderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, order_number, product_id):
+        user = request.user
+
+        # Get all the orders of the logged-in user
+        try:
+            order = CustomerOrder.objects.get(user=user, order_number=order_number)
+            product = Product.objects.get(id=product_id)
+
+        except:
+            return Response({
+                'Status': '0',
+                'message': 'No orders found for this user',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Get all the order items related to the user's orders
+        try:
+            order_item = OrderItem.objects.get(order=order, product=product, status='0')
+
+        except:
+            return Response({
+                'Status': '0',
+                'message': 'No products found for this user',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        order_item.status = '4'
+        order_item.save()
+
+        return Response({
+            'Status': '1',
+            'message': 'Order Cancelled Successfully'
+        }, status=status.HTTP_200_OK)
+    
+
+
 
 class PendingOrdersView(APIView):
     permission_classes = [IsAuthenticated]
@@ -413,7 +512,7 @@ class CartView(APIView):
                 request.session['initialized'] = True
                 request.session.save()
             session_id = request.session.session_key
-        if user.profile.user_type == "customer":
+        # if user.profile.user_type == "customer":
             cart, created = Cart.objects.get_or_create(user=user) if user else Cart.objects.get_or_create(session_id=session_id)
 
             # Retrieve the product

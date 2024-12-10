@@ -65,7 +65,7 @@ class OrderItem(models.Model):
         ('Delivered', 'Delivered'),
         ('CANCELLED', 'Cancelled'),
     ]
-    status = models.CharField(max_length=50, choices=[('0', 'Pending'), ('1', 'Ordered'), ('2', 'Shipped'), ('3', 'Delivered')], default='1')
+    status = models.CharField(max_length=50, choices=[('0', 'Pending'), ('1', 'Ordered'), ('2', 'Shipped'), ('3', 'Delivered'), ('4', 'Cancelled')], default='1')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     # is_approved = models.BooleanField(default=False)
     payment_type = models.CharField(max_length=50, choices=[('COD', 'COD'), ('UPI', 'UPI'), ('CREDIT CARD', 'CREDIT CARD'), ('DEBIT CARD', 'DEBIT CARD')], default='COD')

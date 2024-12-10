@@ -17,6 +17,8 @@ urlpatterns = [
       
       #customer
       path('', AllOrdersView.as_view(), name='all-orders'),
+      path('<str:order_number>/<int:product_id>/', OrderDetailView.as_view(), name='order-detail'),
+      path('<str:order_number>/<int:product_id>/cancel/', CancelSingleProductOrderView.as_view(), name='cancel-single-product-order'),
       path('pending/', PendingOrdersView.as_view(), name='pending-orders'),
       path('delivered/', DeliveredOrdersView.as_view(), name='delivered-orders'),
       path('checkout/', Checkout.as_view(), name='order-checkout'),
