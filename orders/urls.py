@@ -16,11 +16,12 @@ urlpatterns = [
 
       
       #customer
-      path('', AllOrdersView.as_view(), name='all-orders'),
+      # path('', AllOrdersView.as_view(), name='all-orders'),
+      path('', OrdersListView.as_view(), name='filter-orders'),
       path('<str:order_number>/<int:product_id>/', OrderDetailView.as_view(), name='order-detail'),
       path('<str:order_number>/<int:product_id>/cancel/', CancelSingleProductOrderView.as_view(), name='cancel-single-product-order'),
-      path('pending/', PendingOrdersView.as_view(), name='pending-orders'),
-      path('delivered/', DeliveredOrdersView.as_view(), name='delivered-orders'),
+      # path('pending/', PendingOrdersView.as_view(), name='pending-orders'),
+      # path('delivered/', DeliveredOrdersView.as_view(), name='delivered-orders'),
       path('checkout/', Checkout.as_view(), name='order-checkout'),
       path('place-order/', PlaceOrderView.as_view(), name='place-order'),
 
@@ -39,6 +40,9 @@ urlpatterns = [
       path('seller/shipped/', SellerShippedOrders.as_view(), name='get-seller-orders'),
       path('seller/delivered/', SellerDeliveredOrders.as_view(), name='get-seller-orders'),
       path('seller/change-status/', ChangeOrderStatus.as_view(), name='change-order-status'),
+      path('seller/sales-by-year/', SellerSalesByYearView.as_view(), name='change-order-status'),
+
+
 
       #super-admin
       path('superadmin/customers/', AdminTotalCustomerView.as_view(), name='total-customer'),

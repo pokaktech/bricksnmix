@@ -8,6 +8,7 @@ from rest_framework.routers import DefaultRouter
 from accounts.views.customer_views import *
 from accounts.views.seller_views import *
 from accounts.views.superadmin_views import *
+from accounts.views.common import *
 
 
 app_name = 'accounts'
@@ -48,8 +49,14 @@ urlpatterns = [
     #superadmin
     path('superadmin/banners/', BannerCreateView.as_view(), name='create-banners'),
     path('superadmin/brand/', AddBrandView.as_view(), name='add-brand'),
-    path('superadmin/app-feedback/', AppFeedbackListView.as_view(), name='app-feedback-list'),
-    path('superadmin/app-feedback/overall-rating/', OverallFeedbackView.as_view(), name='app-overall-rating')
+    # path('superadmin/customer-feedback/', CustomerFeedbackListView.as_view(), name='customer-feedback-list'),
+    # path('superadmin/customer-feedback/overall-rating/', CustomerOverallFeedbackView.as_view(), name='customer-overall-rating'),
+    # path('superadmin/seller-feedback/', SellerFeedbackListView.as_view(), name='seller-feedback-list'),
+    # path('superadmin/seller-feedback/overall-rating/', SellerOverallFeedbackView.as_view(), name='seller-overall-rating'),
 
-    
+    path('superadmin/feedbacks/', FeedbackListView.as_view(), name='feedback-list'),
+    path('superadmin/overall-app-rating/', OverallFeedbackView.as_view(), name='overall-app-rating'),
+
+
+    # GET /admin/feedbacks/?user_type=seller
 ]

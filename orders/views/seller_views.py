@@ -472,3 +472,59 @@ class SellerRevenueSalesView(APIView):
                 'Sttaus': '1',
                 'message': "You are not a seller"
             })
+
+
+
+
+from rest_framework.exceptions import ValidationError
+
+class SellerSalesByYearView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user  # Logged-in seller
+
+        if user.profile.user_type != "seller":
+            return Response({
+                'Status': '0',
+                'message': "You are not a seller"
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Get the year from query params
+        year = request.query_params.get('year')
+        if not year:
+            raise ValidationError({'year': 'This query parameter is required.'})
+
+        try:
+            year = int(year)
+        except ValueError:
+            raise ValidationError({'year': 'Year must be a valid integer.'})
+
+        # Filter orders by the logged-in seller and the specified year
+        seller_orders = CustomerOrder.objects.filter(
+            items__product__vendor=user,
+            created_at__year=year
+        ).distinct()
+
+        months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]
+
+        # Prepare a list of objects for each month
+        sales_data = []
+
+        for month_index, month_name in enumerate(months, start=1):
+            month_orders = seller_orders.filter(created_at__month=month_index)
+            sales = month_orders.aggregate(total_sales=Count('items__id'))['total_sales'] or 0
+
+            sales_data.append({
+                "month": month_name,
+                "sales": sales
+            })
+
+        return Response({
+            'Status': '1',
+            'message': 'Success',
+            'Data': sales_data
+        })

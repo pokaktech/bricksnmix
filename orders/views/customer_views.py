@@ -273,6 +273,7 @@ class OrderDetailView(APIView):
         product_data = ProductSerializer(order_item.product).data
         product_data['order_number'] = order_item.order.order_number
         product_data['order_status'] = order_item.status
+        product_data['order_state'] = order_item.get_status_display()
         product_data['delivery_from'] = order_item.product.vendor.profile.address if order_item.product.vendor else "Unknown"
         product_data['delivery_to'] = order_item.order.delivery_address.city if order_item.order.delivery_address else "Unknown"
         product_data['delivery_date'] = order_item.estimated_delivery_date().strftime("%d %b %Y")
@@ -702,4 +703,77 @@ class CartFromWishlistView(APIView):
 
 
 
+class OrdersListView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        user = request.user
+        status_param = request.query_params.get('status')
+        
+        # Get all the orders of the logged-in user
+        orders = CustomerOrder.objects.filter(user=user)
+
+        if not orders.exists():
+            return Response({
+                'Status': '1',
+                'message': 'No orders found for this user',
+                'Data': []
+            }, status=status.HTTP_200_OK)
+
+        # Map human-readable status to the string values used in the database ('0', '1', '2', etc.)
+        status_map = {
+            'pending': '0',
+            'ordered': '1',
+            'shipped': '2',
+            'delivered': '3',
+            'cancelled': '4'
+        }
+
+        # If status_param is provided, map it to the correct string value
+        if status_param:
+            status_param = status_map.get(status_param.lower())
+            if not status_param:
+                return Response({
+                    'Status': '0',
+                    'message': 'Invalid status provided',
+                    'Data': []
+                }, status=status.HTTP_400_BAD_REQUEST)
+            order_items = OrderItem.objects.filter(order__in=orders, status=status_param)
+        else:
+            order_items = OrderItem.objects.filter(order__in=orders)
+
+        if not order_items.exists():
+            return Response({
+                'Status': '1',
+                'message': 'No products found for this user with the specified status',
+                'Data': []
+            }, status=status.HTTP_200_OK)
+
+        # Prepare response data
+        response_data = []
+        for item in order_items:
+            product_data = ProductSerializer(item.product).data
+            product_data['order_number'] = item.order.order_number
+            product_data['order_status'] = item.status
+            product_data['order_state'] = item.get_status_display()
+            product_data['delivery_from'] = item.product.vendor.profile.address if item.product.vendor else "Unknown"
+            product_data['delivery_to'] = item.order.delivery_address.city if item.order.delivery_address else "Unknown"
+            product_data['delivery_date'] = item.estimated_delivery_date().strftime("%d %b %Y")
+            product_data['quantity'] = item.quantity
+            product_data['address'] = [{"name": item.order.delivery_address.name,
+                                       "house_name": item.order.delivery_address.housename,
+                                       "city": item.order.delivery_address.city,
+                                       "state": item.order.delivery_address.state,
+                                       "pincode": item.order.delivery_address.pincode,
+                                       "mobile_number": item.order.delivery_address.mobile}]
+            delivery_charge = item.product.delivery_charge if item.quantity < item.product.min_order_quantity else 0
+            product_data['subtotal'] = item.quantity * item.price + delivery_charge
+            product_data['payment_type'] = item.payment_type
+
+            response_data.append(product_data)
+
+        return Response({
+            'Status': '1',
+            'message': 'Products retrieved successfully',
+            'Data': response_data
+        }, status=status.HTTP_200_OK)

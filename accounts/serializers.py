@@ -234,10 +234,12 @@ class SellerSignupSerializer(serializers.ModelSerializer):
 
 
 class AppFeedbackSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    user_type = serializers.CharField(source='user.profile.user_type', read_only=True)
     class Meta:
         model = AppFeedback
-        fields = ['user', 'rating', 'review', 'created_at']
-        read_only_fields = ['user', 'created_at']  # User and created_at should be read-only
+        fields = ['username', 'user_type', 'rating', 'review', 'created_at']
+        read_only_fields = ['username', 'user_type', 'created_at']  # User and created_at should be read-only
 
     def validate_rating(self, value):
         if value < 1 or value > 5:
