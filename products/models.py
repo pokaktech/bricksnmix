@@ -23,6 +23,41 @@ class Brand(models.Model):
 
     def __str__(self):
         return self.name    
+    
+
+
+
+class SpecialOffer(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+    ]
+
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='special_offers')
+    title = models.CharField(max_length=255)  # Offer title
+    banner = models.ImageField(upload_to='offer_banners/')  # Advertisement banner
+    start_date = models.DateField()  # Offer start date
+    end_date = models.DateField()  # Offer end date
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')  # Admin approval status
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Special Offer by {self.seller.username} - {self.title}"
+
+
+class SpecialOfferProduct(models.Model):
+    offer = models.ForeignKey(SpecialOffer, on_delete=models.CASCADE, related_name='offer_products')
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)  # Assume Product model exists
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)  # Discount percentage for the product
+    product_offer_image = models.ImageField(upload_to='offer_product_images/')
+
+    def __str__(self):
+        return f"{self.product.name} in {self.offer.title} - {self.discount_percentage}% off"
+
+
+
 
 class Product(models.Model):
     vendor = models.ForeignKey(User, on_delete=models.CASCADE)

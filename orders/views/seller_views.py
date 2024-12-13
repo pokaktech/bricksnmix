@@ -3,7 +3,6 @@ from django.db.models import Sum, Count
 
 from products.models import Product
 from orders.models import *
-from orders.serializers import NotificationSerializer
 from accounts.consumers import store_notification, send_message_to_customer
 
 from rest_framework.views import APIView
@@ -11,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.exceptions import ValidationError
 
 from datetime import timedelta, datetime
 
@@ -476,7 +476,7 @@ class SellerRevenueSalesView(APIView):
 
 
 
-from rest_framework.exceptions import ValidationError
+
 
 class SellerSalesByYearView(APIView):
     permission_classes = [IsAuthenticated]
@@ -528,3 +528,58 @@ class SellerSalesByYearView(APIView):
             'message': 'Success',
             'Data': sales_data
         })
+
+
+
+
+
+class SellerMonthlyRevenueView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user  # Logged-in seller
+        if user.profile.user_type != "seller":
+            return Response({
+                'Status': '1',
+                'message': "You are not a seller"
+            }, status=403)
+
+        # Get year from query params, default to the current year
+        year_param = request.query_params.get('year', datetime.now().year)
+        try:
+            year = int(year_param)  # Validate year as an integer
+        except ValueError:
+            return Response({
+                'Status': '0',
+                'message': "Invalid year provided"
+            }, status=400)
+
+        # Filter orders for the seller within the specific year
+        seller_orders = CustomerOrder.objects.filter(
+            items__product__vendor=user,
+            created_at__year=year
+        ).distinct()
+
+        months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]
+
+        # Prepare a list of revenue data for each month
+        graph_data = []
+        for month_index, month_name in enumerate(months, start=1):
+            month_orders = seller_orders.filter(created_at__month=month_index)
+            revenue = month_orders.aggregate(
+                total_revenue=Sum('items__price')
+            )['total_revenue'] or 0
+
+            graph_data.append({
+                "month": month_name,
+                "revenue": float(revenue)
+            })
+
+        return Response({
+            'Status': '1',
+            'message': 'Success',
+            'Data': graph_data
+        }, status=200)
