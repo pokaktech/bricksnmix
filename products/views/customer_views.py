@@ -4,9 +4,8 @@ from django.db.models.aggregates import Count
 from django.utils.timezone import now
 from django.shortcuts import get_object_or_404
 
-from products.models import RatingReview
-from products.serializers import RatingReviewSerializer, BrandSerializer, ProductSerializer
-from products.models import Brand, Product, Productimg, Wishlist, WishlistItem
+from products.models import *
+from products.serializers import *
 
 from orders.models import OrderItem
 from orders.models import Cart, CartItem
@@ -15,6 +14,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
+from rest_framework.generics import ListAPIView
 
 from rest_framework import generics
 
@@ -442,3 +442,84 @@ class SimilarProductsView(APIView):
                 'Status': 'Ok',
                 'message': 'Product not Found'
             })
+
+
+
+class CustomerSpecialOfferListView(ListAPIView):
+    # permission_classes = [IsAuthenticated]
+    serializer_class = CustomerSpecialOfferSerializer
+
+    def get_queryset(self):
+        return SpecialOffer.objects.filter(status='Approved')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        response_data = []
+
+        for offer in queryset:
+            # Serialize the offer
+            offer_data = self.serializer_class(offer).data
+
+            # Fetch products associated with the offer
+            offer_products = offer.offer_products.all()
+            enriched_offer_products = []
+
+            for offer_product in offer_products:
+                # Serialize product details and merge with offer product details
+                product_data = ProductSerializer(offer_product.product).data
+                product_data.update({
+                    "discount_percentage": str(offer_product.discount_percentage),
+                    "product_offer_image": offer_product.product_offer_image.url if offer_product.product_offer_image else None,
+                })
+                enriched_offer_products.append(product_data)
+
+            # Add enriched products directly to the offer data
+            offer_data['offer_products'] = enriched_offer_products
+
+            response_data.append(offer_data)
+
+        return Response({
+            'Status': '1',
+            'message': 'Special offers retrieved successfully',
+            'Data': response_data
+        }, status=200)
+    
+
+
+
+class SpecialOfferProductsView(APIView):
+    permission_classes = [AllowAny]  # Public API
+
+    def get(self, request, offer_id):
+        try:
+            # Fetch the offer by ID
+            offer = SpecialOffer.objects.get(id=offer_id, status='Approved')
+        except SpecialOffer.DoesNotExist:
+            return Response({
+                'Status': '0',
+                'message': 'Offer not found or not approved',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Fetch all products associated with the offer
+        offer_products = SpecialOfferProduct.objects.filter(offer=offer)
+        if not offer_products.exists():
+            return Response({
+                'Status': '0',
+                'message': 'No products found for this offer',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize the product data
+        response_data = []
+        for offer_product in offer_products:
+            product_data = ProductSerializer(offer_product.product).data
+            product_data['discount_percentage'] = offer_product.discount_percentage
+            product_data['offer_product_image'] = request.build_absolute_uri(offer_product.product_offer_image.url)
+            response_data.append(product_data)
+
+        return Response({
+            'Status': '1',
+            'message': 'Products retrieved successfully',
+            'Data': response_data
+        }, status=status.HTTP_200_OK)

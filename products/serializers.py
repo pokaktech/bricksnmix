@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Banner, Brand, Product, Productimg, RatingReview, Wishlist, WishlistItem
+from .models import *
 
 
 
@@ -119,6 +119,18 @@ class ProductSerializer(serializers.ModelSerializer):
         return obj.reviews.count()
     
 
+
+class CustomerSpecialOfferProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SpecialOfferProduct
+        fields = ['product', 'discount_percentage', 'product_offer_image']
+
+class CustomerSpecialOfferSerializer(serializers.ModelSerializer):
+    offer_products = CustomerSpecialOfferProductSerializer(many=True)
+
+    class Meta:
+        model = SpecialOffer
+        fields = ['title', 'banner', 'start_date', 'end_date', 'offer_products']
 
 
 

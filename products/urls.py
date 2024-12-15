@@ -17,7 +17,10 @@ urlpatterns = [
     path('<int:product_id>/', ProductDetail.as_view(), name='get-product-by-id'),
       
     path('trending-brands/', TrendingBrandsView.as_view(), name='get-trending-brands'),
+
     path('offers/', OfferProductView.as_view(), name='get-offer-products'),
+    path('offers/special/', CustomerSpecialOfferListView.as_view(), name='special-offers-list'),
+    path('offers/special/<int:offer_id>/', SpecialOfferProductsView.as_view(), name='special-offer-products'),
 
     path('search/', ProductSearchView.as_view(), name='global_search'),
     path('search/brand/<int:brand_id>/', BrandProductSearchView.as_view(), name='brand_search'),
