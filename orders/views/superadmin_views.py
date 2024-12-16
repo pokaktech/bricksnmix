@@ -1,18 +1,19 @@
 from datetime import timedelta
-from django.db.models import Sum
+from django.db.models import Sum, Count
 
 
 from rest_framework.authentication import TokenAuthentication
 
 from datetime import datetime, timedelta
 
-from orders.models import OrderItem
+from orders.models import OrderItem, CustomerOrder
 from products.models import Product
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 
 
 
@@ -178,3 +179,141 @@ class AdminTotalCustomerView(APIView):
         
 
 
+
+class AdminRevenueSalesView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        user = request.user  # Logged-in seller
+        if user.is_superuser:
+            all_orders = CustomerOrder.objects.all().distinct()
+
+            months = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ]
+
+            # Prepare a list of objects for each month
+            graph_data = []
+
+            for month_index, month_name in enumerate(months, start=1):
+                month_orders = all_orders.filter(created_at__month=month_index)
+                revenue = month_orders.aggregate(total_revenue=Sum('items__price'))['total_revenue'] or 0
+                sales = month_orders.aggregate(total_sales=Count('items__id'))['total_sales'] or 0
+
+                graph_data.append({
+                    "month": month_name,
+                    "revenue": float(revenue),
+                    "sales": sales
+                })
+
+            return Response({
+                'Status': '1',
+                'message': 'Success',
+                'Data': graph_data
+            })
+        else:
+            return Response({
+                'Status': '1',
+                'message': "You are not an admin"
+            })
+
+
+
+
+class AdminSalesByYearView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user  # Logged-in seller
+
+        if user.is_superuser != True:
+            return Response({
+                'Status': '0',
+                'message': "You are not an admin"
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Get the year from query params
+        year = request.query_params.get('year')
+        if not year:
+            raise ValidationError({'year': 'This query parameter is required.'})
+
+        try:
+            year = int(year)
+        except ValueError:
+            raise ValidationError({'year': 'Year must be a valid integer.'})
+
+        # Filter orders by the logged-in seller and the specified year
+        all_orders = CustomerOrder.objects.filter(created_at__year=year).distinct()
+
+        months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]
+
+        # Prepare a list of objects for each month
+        sales_data = []
+
+        for month_index, month_name in enumerate(months, start=1):
+            month_orders = all_orders.filter(created_at__month=month_index)
+            sales = month_orders.aggregate(total_sales=Count('items__id'))['total_sales'] or 0
+
+            sales_data.append({
+                "month": month_name,
+                "sales": sales
+            })
+
+        return Response({
+            'Status': '1',
+            'message': 'Success',
+            'Data': sales_data
+        })
+    
+
+
+class AdminMonthlyRevenueView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user  # Logged-in seller
+        if user.is_superuser != True:
+            return Response({
+                'Status': '1',
+                'message': "You are not an admin"
+            }, status=403)
+
+        # Get year from query params, default to the current year
+        year_param = request.query_params.get('year', datetime.now().year)
+        try:
+            year = int(year_param)  # Validate year as an integer
+        except ValueError:
+            return Response({
+                'Status': '0',
+                'message': "Invalid year provided"
+            }, status=400)
+
+        # Filter orders for the seller within the specific year
+        all_orders = CustomerOrder.objects.filter(created_at__year=year).distinct()
+
+        months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]
+
+        # Prepare a list of revenue data for each month
+        graph_data = []
+        for month_index, month_name in enumerate(months, start=1):
+            month_orders = all_orders.filter(created_at__month=month_index)
+            revenue = month_orders.aggregate(
+                total_revenue=Sum('items__price')
+            )['total_revenue'] or 0
+
+            graph_data.append({
+                "month": month_name,
+                "revenue": float(revenue)
+            })
+
+        return Response({
+            'Status': '1',
+            'message': 'Success',
+            'Data': graph_data
+        }, status=200)

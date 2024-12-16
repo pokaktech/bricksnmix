@@ -469,7 +469,7 @@ class SellerRevenueSalesView(APIView):
             })
         else:
             return Response({
-                'Sttaus': '1',
+                'Status': '1',
                 'message': "You are not a seller"
             })
 
