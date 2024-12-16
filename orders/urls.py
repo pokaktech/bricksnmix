@@ -42,6 +42,7 @@ urlpatterns = [
       path('seller/change-status/', ChangeOrderStatus.as_view(), name='change-order-status'),
       path('seller/sales-by-year/', SellerSalesByYearView.as_view(), name='seller-sales-by-year'),
       path('seller/monthly-revenue/', SellerMonthlyRevenueView.as_view(), name='seller-monthly-revenue'),
+      path('seller/satisfaction/', SellerCustomerSatisfactionView.as_view(), name='seller-customer-satisfaction'),
 
 
 

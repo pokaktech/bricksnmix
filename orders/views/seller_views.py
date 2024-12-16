@@ -1,7 +1,7 @@
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Avg
 
 
-from products.models import Product
+from products.models import Product, RatingReview
 from orders.models import *
 from accounts.consumers import store_notification, send_message_to_customer
 
@@ -583,3 +583,57 @@ class SellerMonthlyRevenueView(APIView):
             'message': 'Success',
             'Data': graph_data
         }, status=200)
+    
+
+
+
+class SellerCustomerSatisfactionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # Check if the user is a seller
+        if user.profile.user_type != "seller":
+            return Response({
+                "Status": "0",
+                "message": "You are not authorized to view this data"
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Get the year from query params (default: current year)
+        year = request.query_params.get('year', None)
+
+        # Seller's products
+        seller_products = Product.objects.filter(vendor=user)
+
+        if not seller_products.exists():
+            return Response({
+                "Status": "0",
+                "message": "No products found for this seller"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Ratings grouped by month
+        months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]
+        graph_data = []
+
+        for month_index, month_name in enumerate(months, start=1):
+            # Filter ratings for this seller's products in the given month/year
+            monthly_ratings = RatingReview.objects.filter(
+                product__in=seller_products,
+                created_at__year=year,
+                created_at__month=month_index
+            ).aggregate(average_rating=Avg('rating'))
+
+            graph_data.append({
+                "month": month_name,
+                "average_rating": round(monthly_ratings['average_rating'], 2) if monthly_ratings['average_rating'] else 0
+            })
+
+        return Response({
+            "Status": "1",
+            "message": "Customer satisfaction ratings retrieved successfully",
+            "Data": graph_data
+        }, status=status.HTTP_200_OK)
