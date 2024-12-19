@@ -60,6 +60,7 @@ class ProductSerializer(serializers.ModelSerializer):
     wishlisted = serializers.SerializerMethodField()
     product_rating = serializers.SerializerMethodField()
     product_review_count = serializers.SerializerMethodField()
+    brand = serializers.CharField(source='brand.name')
     # image = serializers.ImageField(required=False)
     
     class Meta:

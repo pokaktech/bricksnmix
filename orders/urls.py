@@ -33,7 +33,7 @@ urlpatterns = [
       path('seller/customers/', SellerTotalCustomerView.as_view(), name='total-customer'),
       path('seller/revenue/', SellerTotalRevenueView.as_view(), name='total-revenue'),
       path('seller/revenue-sales/', SellerRevenueSalesView.as_view(), name='seller-revenue-sales'),
-      path('seller/', SellerTotalOrderView.as_view(), name='total-orders'),
+      path('seller/total-order-count/', SellerTotalOrderView.as_view(), name='total-orders'),
       path('seller/all/', SellerAllOrders.as_view(), name='get-seller-orders'),
       path('seller/pending/', SellerPendingOrders.as_view(), name='get-seller-orders'),
       path('seller/confirmed/', SellerConfirmedOrders.as_view(), name='get-seller-orders'),
@@ -43,6 +43,11 @@ urlpatterns = [
       path('seller/sales-by-year/', SellerSalesByYearView.as_view(), name='seller-sales-by-year'),
       path('seller/monthly-revenue/', SellerMonthlyRevenueView.as_view(), name='seller-monthly-revenue'),
       path('seller/satisfaction/', SellerCustomerSatisfactionView.as_view(), name='seller-customer-satisfaction'),
+
+      path('seller/orders/', SellerFullOrders.as_view()),
+      path('seller/orders/<str:order_number>/', SellerOrderItemsView.as_view()),
+      path('seller/filter/', SellerOrdersByStatus.as_view()),
+      path('seller/sales-view/', SellerSaleViews.as_view()),
 
 
 

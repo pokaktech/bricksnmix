@@ -39,6 +39,11 @@ urlpatterns = [
 
     path('similar-products/<int:product_id>/', SimilarProductsView.as_view(), name='similar-products'),
 
+    path('all-sellers/', SellerAndProducts.as_view(), name='all-sellers'),  # All sellers
+    path('all-sellers/<int:seller_id>/', SellerAndProducts.as_view(), name='seller-products'),  # Seller's products
+
+    path('top-rated/', TopRatedProductsView.as_view(), name='top-rated-products'),
+
 
     #seller
     # path('seller/<int:product_id>/stock/', ProductStockView.as_view(), name='product-stock'),

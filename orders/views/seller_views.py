@@ -1,8 +1,9 @@
-from django.db.models import Sum, Count, Avg
-
+from django.db.models import Sum, Count, Avg, F, Case, When, Value, Q
+from django.shortcuts import get_object_or_404
 
 from products.models import Product, RatingReview
 from orders.models import *
+from orders.serializers import SellerOrderItemSerializer
 from accounts.consumers import store_notification, send_message_to_customer
 
 from rest_framework.views import APIView
@@ -41,7 +42,8 @@ class SellerAllOrders(APIView):
                     "place": item.order.delivery_address.city,
                     "quantity": item.quantity,
                     "status": item.status,
-                    "price": item.product.price
+                    "price": item.product.price,
+                    "order_number": item.order.order_number
                 })
             # return Response({'Status: 1', 'message': 'Success', })
             return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
@@ -75,7 +77,8 @@ class SellerPendingOrders(APIView):
                     "place": item.order.delivery_address.city,
                     "quantity": item.quantity,
                     "status": item.status,
-                    "price": item.product.price
+                    "price": item.product.price,
+                    "order_number": item.order.order_number
                 })
             # return Response({'Status: 1', 'message': 'Success', })
             return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
@@ -108,7 +111,8 @@ class SellerConfirmedOrders(APIView):
                     "place": item.order.delivery_address.city,
                     "quantity": item.quantity,
                     "status": item.status,
-                    "price": item.product.price
+                    "price": item.product.price,
+                    "order_number": item.order.order_number
                 })
             # return Response({'Status: 1', 'message': 'Success', })
             return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
@@ -143,7 +147,8 @@ class SellerShippedOrders(APIView):
                     "place": item.order.delivery_address.city,
                     "quantity": item.quantity,
                     "status": item.status,
-                    "price": item.product.price
+                    "price": item.product.price,
+                    "order_number": item.order.order_number
                 })
             # return Response({'Status: 1', 'message': 'Success', })
             return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
@@ -177,7 +182,8 @@ class SellerDeliveredOrders(APIView):
                     "place": item.order.delivery_address.city,
                     "quantity": item.quantity,
                     "status": item.status,
-                    "price": item.product.price
+                    "price": item.product.price,
+                    "order_number": item.order.order_number
                 })
             # return Response({'Status: 1', 'message': 'Success', })
             return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
@@ -637,3 +643,188 @@ class SellerCustomerSatisfactionView(APIView):
             "message": "Customer satisfaction ratings retrieved successfully",
             "Data": graph_data
         }, status=status.HTTP_200_OK)
+    
+
+
+
+
+
+class SellerFullOrders(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if not user.profile.user_type == 'seller':
+            return Response({
+                'Status': '0',
+                'message': 'You are not authorized to view this data',
+                'Data': []
+            }, status=403)
+
+        
+        orders = CustomerOrder.objects.filter(items__product__vendor=user).distinct()
+
+        if not orders.exists():
+            return Response({
+                'Status': '1',
+                'message': 'No orders found for this seller',
+                'Data': []
+            })
+
+        response_data = []
+        for order in orders:
+            # Get all items for this order
+            order_items = order.items.filter(product__vendor=user)
+
+            # Calculate total amount for the order
+            total_amount = order_items.aggregate(
+                total=Sum(F('price') * F('quantity'))
+            )['total'] or 0
+
+            # Determine the order status
+            if order_items.filter(~Q(status='3')).exists():  # If any item's status is not "3" (Delivered)
+                order_status = "Pending"
+            else:
+                order_status = "Completed"
+
+            # Append data for each order
+            response_data.append({
+                'order_date': order.created_at.strftime('%Y-%m-%d'),
+                'order_number': order.order_number,
+                'place': order.delivery_address.city,
+                'total_amount': total_amount,
+                'order_status': order_status
+            })
+
+        return Response({
+            'Status': '1',
+            'message': 'Orders retrieved successfully',
+            'Data': response_data
+        })
+    
+
+
+class SellerOrderItemsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, order_number):
+        user = request.user
+
+        # Fetch the order belonging to the logged-in seller
+        order = get_object_or_404(CustomerOrder, order_number=order_number)
+
+        # Get all items for this order
+        order_items = order.items.filter(product__vendor=user)
+
+        # Serialize the order items
+        serializer = SellerOrderItemSerializer(order_items, many=True)
+
+        return Response({
+            'Status': '1',
+            'message': 'Order items retrieved successfully',
+            'Data': serializer.data
+        }, status=200)
+    
+
+
+
+class SellerOrdersByStatus(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        
+        # Check if the user is a seller
+        if not user.profile.user_type == 'seller':
+            return Response({
+                'Status': '0',
+                'message': 'You are not authorized to view this data',
+                'Data': []
+            }, status=403)
+
+        # Get status filter from query params
+        status_param = request.query_params.get('status')
+        if status_param not in ["pending", "completed"]:
+            return Response({
+                'Status': '0',
+                'message': 'Invalid status. Use pending or completed.',
+                'Data': []
+            }, status=400)
+
+        # Filter orders based on the status_param
+        orders = CustomerOrder.objects.filter(items__product__vendor=user).distinct()
+
+        if status_param == "pending":
+            # Orders where at least one item's status is not "3" (Delivered)
+            orders = [order for order in orders if order.items.filter(~Q(status='3'), product__vendor=user).exists()]
+        elif status_param == "completed":
+            # Orders where all items' status is "3" (Delivered)
+            orders = [order for order in orders if not order.items.filter(~Q(status='3'), product__vendor=user).exists()]
+
+        if not orders:
+            return Response({
+                'Status': '1',
+                'message': f'No {status_param.lower()} orders found for this seller',
+                'Data': []
+            })
+
+        # Prepare response data
+        response_data = []
+        for order in orders:
+            # Get all items for this order
+            order_items = order.items.filter(product__vendor=user)
+
+            # Calculate total amount for the order
+            total_amount = order_items.aggregate(
+                total=Sum(F('price') * F('quantity'))
+            )['total'] or 0
+
+            # Append data for each order
+            response_data.append({
+                'order_date': order.created_at.strftime('%Y-%m-%d'),
+                'order_number': order.order_number,
+                'place': order.delivery_address.city,
+                'total_amount': total_amount,
+                'order_status': status_param  # Use the query param directly as status
+            })
+
+        return Response({
+            'Status': '1',
+            'message': f'{status_param} orders retrieved successfully',
+            'Data': response_data
+        })
+
+
+
+
+class SellerSaleViews(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get(self, request):
+        user = request.user
+
+        # Check if the user is a seller
+        if user.profile.user_type != 'seller':
+            return Response({'Status': '0', 'message': 'You are not authorized to view products as you are not a seller.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            # If a specific product ID is provided, fetch the product and check if it belongs to the seller
+            order_items = OrderItem.objects.filter(product__vendor=user, status='3')
+            data = []
+            for item in order_items:
+                data.append({
+                    "customer_name": item.order.user.username,
+                    "time": item.order.created_at.strftime('%H:%M:%S'),
+                    "date": item.order.created_at.strftime('%Y-%m-%d'),
+                    "name": item.product.name,
+                    "place": item.order.delivery_address.city,
+                    "quantity": item.quantity,
+                    "status": item.status,
+                    "total_amount": item.product.price,
+                    "order_number": item.order.order_number
+                })
+            # return Response({'Status: 1', 'message': 'Success', })
+            return Response({'Status': '1', 'message': 'Success', 'Data': data}, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found or you do not own this product.'}, status=status.HTTP_404_NOT_FOUND)

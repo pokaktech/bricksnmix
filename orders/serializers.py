@@ -50,3 +50,15 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['id', 'heading', 'message', 'is_read', 'created_at']
+
+
+class SellerOrderItemSerializer(serializers.ModelSerializer):
+    product_id = serializers.IntegerField(source='product.id')
+    product_name = serializers.CharField(source='product.name')
+    amount = serializers.CharField(source='price')
+    state = serializers.CharField(source='get_status_display')
+    class Meta:
+        model = OrderItem
+        fields = ['product_id', 'product_name', 'quantity', 'amount', 'status', 'state']
+
+

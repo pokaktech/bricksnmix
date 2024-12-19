@@ -1,6 +1,6 @@
 from django.utils import timezone
 from django.db.models import Sum
-from django.db.models.aggregates import Count
+from django.db.models.aggregates import Count, Avg
 from django.utils.timezone import now
 from django.shortcuts import get_object_or_404
 
@@ -9,6 +9,8 @@ from products.serializers import *
 
 from orders.models import OrderItem
 from orders.models import Cart, CartItem
+
+from accounts.models import Company
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -523,3 +525,80 @@ class SpecialOfferProductsView(APIView):
             'message': 'Products retrieved successfully',
             'Data': response_data
         }, status=status.HTTP_200_OK)
+    
+
+
+
+
+class SellerAndProducts(APIView):
+    def get(self, request, seller_id=None):
+        # If a seller ID is passed, fetch that seller's products
+        if seller_id:
+            seller = get_object_or_404(User, id=seller_id, profile__user_type='seller')
+            products = Product.objects.filter(vendor=seller)
+
+            if products.exists():
+                serializer = ProductSerializer(products, many=True)
+                return Response({
+                    'Status': '1',
+                    'message': 'Success',
+                    'data': serializer.data
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'Status': '0',
+                    'message': 'No products found for this seller',
+                    'data': []
+                }, status=status.HTTP_200_OK)
+
+        # If no seller ID is passed, fetch all sellers with names and images manually
+        companies = Company.objects.filter(vendor__profile__user_type='seller')
+
+        if companies.exists():
+            # Prepare the response without using a serializer
+            company_data = [
+                {
+                    'seller_id': company.vendor.id,
+                    'name': company.name,
+                    'logo': company.logo.url if company.logo else None
+                }
+                for company in companies
+            ]
+
+            return Response({
+                'Status': '1',
+                'message': 'All sellers retrieved successfully',
+                'data': company_data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'Status': '0',
+                'message': 'No sellers found',
+                'data': []
+            }, status=status.HTTP_200_OK)
+
+            
+
+class TopRatedProductsView(APIView):
+    def get(self, request):
+        try:
+            # Fetch products with an average rating of 4 or above
+            high_rated_products = [
+                product for product in Product.objects.all() 
+                if product.get_average_rating() >= 4
+            ]
+
+            # Serialize the products
+            serializer = ProductSerializer(high_rated_products, many=True)
+
+            return Response({
+                'Status': '1',
+                'message': 'High-rated products retrieved successfully',
+                'Data': serializer.data
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                'Status': '0',
+                'message': f'Error: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
