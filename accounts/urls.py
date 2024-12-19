@@ -30,7 +30,7 @@ urlpatterns = [
     # path('profiles/<int:pk>/', ProfileRetrieveUpdateDestroyView.as_view(), name='profile-retrieve-update-destroy'),
     path('profile-update/', ProfileUpdateView.as_view(), name='profile-update'),
     path('select-delivery/', DefaultDeliveryAddressView.as_view(), name='select-delivery'),
-    path('banners/', BannerListView.as_view(), name='get-banners'),
+    # path('banners/', BannerListView.as_view(), name='get-banners'),
     path('create-sessionid/', CreateSessionIdView.as_view(), name='create-sessionid'),
     path('webcreate-sessionid/', WebCreateSessionIdView.as_view(), name='webcreate-sessionid'),
     path('addresses/', DeliveryAddressListCreateView.as_view(), name='address-list-create'),
@@ -47,7 +47,7 @@ urlpatterns = [
     path('superadmin-contacts/', SuperAdminContactView.as_view(), name='superadmin-contacts'),
     
     #superadmin
-    path('superadmin/banners/', BannerCreateView.as_view(), name='create-banners'),
+    # path('superadmin/banners/', BannerCreateView.as_view(), name='create-banners'),
     path('superadmin/brand/', AddBrandView.as_view(), name='add-brand'),
     # path('superadmin/customer-feedback/', CustomerFeedbackListView.as_view(), name='customer-feedback-list'),
     # path('superadmin/customer-feedback/overall-rating/', CustomerOverallFeedbackView.as_view(), name='customer-overall-rating'),

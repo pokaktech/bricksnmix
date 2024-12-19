@@ -447,12 +447,12 @@ class SimilarProductsView(APIView):
 
 
 
-class CustomerSpecialOfferListView(ListAPIView):
+class CustomerBannerListView(ListAPIView):
     # permission_classes = [IsAuthenticated]
-    serializer_class = CustomerSpecialOfferSerializer
+    serializer_class = CustomerBannerSerializer
 
     def get_queryset(self):
-        return SpecialOffer.objects.filter(status='Approved')
+        return Banner.objects.filter(status='Approved')
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -463,20 +463,20 @@ class CustomerSpecialOfferListView(ListAPIView):
             offer_data = self.serializer_class(offer).data
 
             # Fetch products associated with the offer
-            offer_products = offer.offer_products.all()
-            enriched_offer_products = []
+            # offer_products = offer.offer_products.all()
+            # enriched_offer_products = []
 
-            for offer_product in offer_products:
-                # Serialize product details and merge with offer product details
-                product_data = ProductSerializer(offer_product.product).data
-                product_data.update({
-                    "discount_percentage": str(offer_product.discount_percentage),
-                    "product_offer_image": offer_product.product_offer_image.url if offer_product.product_offer_image else None,
-                })
-                enriched_offer_products.append(product_data)
+            # for offer_product in offer_products:
+            #     # Serialize product details and merge with offer product details
+            #     product_data = ProductSerializer(offer_product.product).data
+            #     product_data.update({
+            #         "discount_percentage": str(offer_product.discount_percentage),
+            #         "product_offer_image": offer_product.product_offer_image.url if offer_product.product_offer_image else None,
+            #     })
+            #     enriched_offer_products.append(product_data)
 
-            # Add enriched products directly to the offer data
-            offer_data['offer_products'] = enriched_offer_products
+            # # Add enriched products directly to the offer data
+            # offer_data['offer_products'] = enriched_offer_products
 
             response_data.append(offer_data)
 
@@ -489,14 +489,14 @@ class CustomerSpecialOfferListView(ListAPIView):
 
 
 
-class SpecialOfferProductsView(APIView):
+class CustomerBannerProductsView(APIView):
     permission_classes = [AllowAny]  # Public API
 
-    def get(self, request, offer_id):
+    def get(self, request, banner_id):
         try:
             # Fetch the offer by ID
-            offer = SpecialOffer.objects.get(id=offer_id, status='Approved')
-        except SpecialOffer.DoesNotExist:
+            banner = Banner.objects.get(id=banner_id, status='Approved')
+        except Banner.DoesNotExist:
             return Response({
                 'Status': '0',
                 'message': 'Offer not found or not approved',
@@ -504,8 +504,8 @@ class SpecialOfferProductsView(APIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
         # Fetch all products associated with the offer
-        offer_products = SpecialOfferProduct.objects.filter(offer=offer)
-        if not offer_products.exists():
+        banner_products = BannerProduct.objects.filter(banner=banner)
+        if not banner_products.exists():
             return Response({
                 'Status': '0',
                 'message': 'No products found for this offer',
@@ -514,10 +514,10 @@ class SpecialOfferProductsView(APIView):
 
         # Serialize the product data
         response_data = []
-        for offer_product in offer_products:
-            product_data = ProductSerializer(offer_product.product).data
-            product_data['discount_percentage'] = offer_product.discount_percentage
-            product_data['offer_product_image'] = request.build_absolute_uri(offer_product.product_offer_image.url)
+        for banner in banner_products:
+            product_data = ProductSerializer(banner.product).data
+            # product_data['discount_percentage'] = banner.discount_percentage
+            product_data['product_banner_image'] = request.build_absolute_uri(banner.product_banner_image.url)
             response_data.append(product_data)
 
         return Response({

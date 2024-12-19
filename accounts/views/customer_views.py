@@ -17,8 +17,7 @@ from PIL import Image
 from accounts.models import *
 from accounts.serializers import *
 from orders.models import Cart, CartItem
-from products.models import Banner, Wishlist, WishlistItem
-from products.serializers import BannerSerializer
+from products.models import Wishlist, WishlistItem
 
 
 from rest_framework.exceptions import ValidationError
@@ -287,16 +286,16 @@ def change_password(request):
 
 
 
-class BannerListView(APIView):
-    def get(self, request, format=None):
-        print("check")
-        banners = Banner.objects.all()
-        serializer = BannerSerializer(banners, many=True)
-        return Response({
-            "Status": "1",
-            "message": "Success",
-            "Data": serializer.data
-        })  
+# class BannerListView(APIView):
+#     def get(self, request, format=None):
+#         print("check")
+#         banners = Banner.objects.all()
+#         serializer = BannerSerializer(banners, many=True)
+#         return Response({
+#             "Status": "1",
+#             "message": "Success",
+#             "Data": serializer.data
+#         })  
         
 
 

@@ -4,18 +4,18 @@ from .models import *
 
 
 
-class BannerSerializer(serializers.ModelSerializer):
-    bannername = serializers.CharField(source='name')
-    image = serializers.ImageField()
+# class BannerSerializer(serializers.ModelSerializer):
+#     bannername = serializers.CharField(source='name')
+#     image = serializers.ImageField()
 
-    class Meta:
-        model = Banner
-        fields = ['id', 'bannername', 'image']        
-        # extra_kwargs = {
-        #     'id': {'read_only': True},
-        #     'image': {'required': True}
-        # }
-        read_only_fields = ['id'] 
+#     class Meta:
+#         model = Banner
+#         fields = ['id', 'bannername', 'image']        
+#         # extra_kwargs = {
+#         #     'id': {'read_only': True},
+#         #     'image': {'required': True}
+#         # }
+#         read_only_fields = ['id'] 
 
 
 
@@ -121,17 +121,17 @@ class ProductSerializer(serializers.ModelSerializer):
     
 
 
-class CustomerSpecialOfferProductSerializer(serializers.ModelSerializer):
+class CustomerBannerProductSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SpecialOfferProduct
-        fields = ['product', 'discount_percentage', 'product_offer_image']
+        model = BannerProduct
+        fields = ['product', 'banner']
 
-class CustomerSpecialOfferSerializer(serializers.ModelSerializer):
-    offer_products = CustomerSpecialOfferProductSerializer(many=True)
+class CustomerBannerSerializer(serializers.ModelSerializer):
+    # banner_products = CustomerBannerProductSerializer(many=True)
 
     class Meta:
-        model = SpecialOffer
-        fields = ['title', 'banner', 'start_date', 'end_date', 'offer_products']
+        model = Banner
+        fields = ['id', 'title', 'banner', 'start_date', 'end_date']
 
 
 

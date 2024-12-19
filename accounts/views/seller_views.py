@@ -4,8 +4,8 @@ from django.core.exceptions import PermissionDenied
 from accounts.serializers import *
 from accounts.models import *
 
-from products.models import Banner
-from products.serializers import BannerSerializer, BrandSerializer
+
+from products.serializers import BrandSerializer
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -94,31 +94,31 @@ class AddBrandView(APIView):
 
 
 
-class BannerCreateView(APIView):
-    def get(self, request, format=None):
-        print("check")
-        banners = Banner.objects.all()
-        serializer = BannerSerializer(banners, many=True)
-        return Response({
-            "Status": "1",
-            "message": "Success",
-            "Data": serializer.data
-        })        
+# class BannerCreateView(APIView):
+#     def get(self, request, format=None):
+#         print("check")
+#         banners = Banner.objects.all()
+#         serializer = BannerSerializer(banners, many=True)
+#         return Response({
+#             "Status": "1",
+#             "message": "Success",
+#             "Data": serializer.data
+#         })        
         
-    def post(self, request, format=None):
-        serializer = BannerSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                "Status": "1",
-                "message": "Banner added successfully",
-                "Data": serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response({
-            "Status": "0",
-            "message": "Error",
-            "Errors": serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+#     def post(self, request, format=None):
+#         serializer = BannerSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({
+#                 "Status": "1",
+#                 "message": "Banner added successfully",
+#                 "Data": serializer.data
+#             }, status=status.HTTP_201_CREATED)
+#         return Response({
+#             "Status": "0",
+#             "message": "Error",
+#             "Errors": serializer.errors
+#         }, status=status.HTTP_400_BAD_REQUEST)
 
 
 
