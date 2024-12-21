@@ -3,6 +3,7 @@ from django.db.models import Sum
 from django.db.models.aggregates import Count, Avg
 from django.utils.timezone import now
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 
 from products.models import *
 from products.serializers import *
@@ -21,6 +22,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework import generics
 
 from datetime import timedelta
+from collections import defaultdict
 
 
 
@@ -98,16 +100,16 @@ class TrendingBrandsView(APIView):
 
 
 
-class OfferProductView(APIView):
-    permission_classes = [AllowAny]
-    def get(self, request, format=None):
-        products = Product.objects.filter(offer_percent__gt=0, stock__gt=0)
-        serializer = ProductSerializer(products, many=True, context={'request': request})
-        return Response({
-            "Status": "1",
-            "message": "Success",
-            "Data": serializer.data
-        })     
+# class OfferProductView(APIView):
+#     permission_classes = [AllowAny]
+#     def get(self, request, format=None):
+#         products = Product.objects.filter(offer_percent__gt=0, stock__gt=0)
+#         serializer = ProductSerializer(products, many=True, context={'request': request})
+#         return Response({
+#             "Status": "1",
+#             "message": "Success",
+#             "Data": serializer.data
+#         })     
 
 
 
@@ -527,6 +529,94 @@ class CustomerBannerProductsView(APIView):
         }, status=status.HTTP_200_OK)
     
 
+
+class SpecialOfferProductsView(APIView):
+
+    def get(self, request):
+        # Get all special offer products
+        special_offer_products = SpecialOfferProduct.objects.select_related('product', 'offer').all()
+
+        # Group products by their offer
+        offers_data = defaultdict(lambda: {"products": []})
+        for sop in special_offer_products:
+            offer_id = sop.offer.id
+            offers_data[offer_id]["offer_title"] = sop.offer.title
+            offers_data[offer_id]["banner"] = sop.offer.banner.url if sop.offer.banner else None
+
+            # Serialize product data
+            product_data = ProductSerializer(sop.product).data
+            offers_data[offer_id]["products"].append(product_data)
+
+        # Prepare response format
+        response_data = [
+            {
+                "offer_title": data["offer_title"],
+                "banner": data["banner"],
+                "products": data["products"],
+            }
+            for data in offers_data.values()
+        ]
+
+        return Response({
+            "Status": "1",
+            "message": "Special offer products retrieved successfully",
+            "data": response_data
+        })
+
+
+
+class SpecialOfferProductsSearchView(APIView):
+    def post(self, request):
+        # Get the search word from the request body
+        search_word = request.data.get("search_word", "").strip()
+
+        if not search_word:
+            return Response({
+                "Status": "0",
+                "message": "Search word is required.",
+                "data": []
+            })
+
+        # Filter special offer products based on the search word
+        special_offer_products = SpecialOfferProduct.objects.select_related('product', 'offer').filter(
+            Q(offer__title__icontains=search_word) |  # Search in offer title
+            Q(product__name__icontains=search_word) |  # Search in product name
+            Q(product__description__icontains=search_word)  # Search in product description
+        )
+
+        if not special_offer_products.exists():
+            return Response({
+                "Status": "0",
+                "message": "No matching products or offers found.",
+                "data": []
+            })
+
+        # Group products by their offer
+        offers_data = defaultdict(lambda: {"products": []})
+        for sop in special_offer_products:
+            offer_id = sop.offer.id
+            offers_data[offer_id]["offer_title"] = sop.offer.title
+            offers_data[offer_id]["banner"] = sop.offer.banner.url if sop.offer.banner else None
+
+            # Serialize product data
+            product_data = ProductSerializer(sop.product).data
+            offers_data[offer_id]["products"].append(product_data)
+
+        # Prepare response format
+        response_data = [
+            {
+                "offer_title": data["offer_title"],
+                "banner": data["banner"],
+                "products": data["products"],
+            }
+            for data in offers_data.values()
+        ]
+
+        return Response({
+            "Status": "1",
+            "message": "Search results retrieved successfully.",
+            "data": response_data
+        })
 
 
 

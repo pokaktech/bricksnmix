@@ -18,9 +18,12 @@ urlpatterns = [
       
     path('trending-brands/', TrendingBrandsView.as_view(), name='get-trending-brands'),
 
-    path('offers/', OfferProductView.as_view(), name='get-offer-products'),
-    path('banners/', CustomerBannerListView.as_view(), name='special-offers-list'),
-    path('banners/<int:banner_id>/', CustomerBannerProductsView.as_view(), name='special-offer-products'),
+    # path('offers/', OfferProductView.as_view(), name='get-offer-products'),
+    path('banners/', CustomerBannerListView.as_view(), name='banners-list'),
+    path('banners/<int:banner_id>/', CustomerBannerProductsView.as_view(), name='banner-products'),
+
+    path('special-offers/', SpecialOfferProductsView.as_view(), name='special-offer-products'),
+    path('search/special-offers/', SpecialOfferProductsSearchView.as_view(), name='search-special-offer-products'),
 
     path('search/', ProductSearchView.as_view(), name='global_search'),
     path('search/brand/<int:brand_id>/', BrandProductSearchView.as_view(), name='brand_search'),

@@ -59,6 +59,56 @@ class BannerProduct(models.Model):
 
 
 
+class SpecialOffer(models.Model):
+    # STATUS_CHOICES = [
+    #     ('Pending', 'Pending'),
+    #     ('Approved', 'Approved'),
+    #     ('Rejected', 'Rejected'),
+    # ]
+
+    # seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='special_offers')
+    title = models.CharField(max_length=255)  # Offer title
+    banner = models.ImageField(upload_to='offer_banners/')  # Advertisement banner
+    start_date = models.DateField()  # Offer start date
+    end_date = models.DateField()  # Offer end date
+    # status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')  # Admin approval status
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Special Offer by {self.title}"
+
+
+class SpecialOfferProduct(models.Model):
+    offer = models.ForeignKey(SpecialOffer, on_delete=models.CASCADE, related_name='offer_products')
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='special_offer_products')
+    special_discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+
+    original_price = None  # Temporary attribute to store original price (optional)
+
+    def save(self, *args, **kwargs):
+        # Backup the original price for restoration later
+        if not hasattr(self.product, 'original_price'):
+            self.product.original_price = self.product.price
+        
+        # Apply the special discount
+        discounted_price = self.product.price * (1 - (self.special_discount_percentage / 100))
+        self.product.price = round(discounted_price, 2)
+        self.product.save()
+        
+        super(SpecialOfferProduct, self).save(*args, **kwargs)
+
+    def revert_price(self):
+        # Revert the product price to its original price
+        if hasattr(self.product, 'original_price'):
+            self.product.price = self.product.original_price
+            self.product.save()
+
+    def __str__(self):
+        return f"{self.product.name} in {self.offer.title} - {self.special_discount_percentage}% off"
+
+
+
+
 class Product(models.Model):
     vendor = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True)
