@@ -692,3 +692,68 @@ class TopRatedProductsView(APIView):
                 'Status': '0',
                 'message': f'Error: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+
+class CustomerSponsoredListView(ListAPIView):
+    # permission_classes = [IsAuthenticated]
+    serializer_class = CustomerSponsoredSerializer
+
+    def get_queryset(self):
+        return Sponsored.objects.filter(status='Approved')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        response_data = []
+
+        for sponsored in queryset:
+            # Serialize the offer
+            offer_data = self.serializer_class(sponsored).data
+            response_data.append(offer_data)
+
+        return Response({
+            'Status': '1',
+            'message': 'Sponsored retrieved successfully',
+            'Data': response_data
+        }, status=200)
+    
+
+
+
+class CustomerSponsoredProductsView(APIView):
+    permission_classes = [AllowAny]  # Public API
+
+    def get(self, request, sponsored_id):
+        try:
+            # Fetch the offer by ID
+            sponsored = Sponsored.objects.get(id=sponsored_id, status='Approved')
+        except Sponsored.DoesNotExist:
+            return Response({
+                'Status': '0',
+                'message': 'Sponsored not found or not approved',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Fetch all products associated with the offer
+        sponsored_products = SponsoredProduct.objects.filter(sponsored=sponsored)
+        if not sponsored_products.exists():
+            return Response({
+                'Status': '0',
+                'message': 'No products found for this sponsored',
+                'Data': []
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize the product data
+        response_data = []
+        for sponsored in sponsored_products:
+            product_data = ProductSerializer(sponsored.product).data
+            # product_data['discount_percentage'] = banner.discount_percentage
+            # product_data['product_banner_image'] = request.build_absolute_uri(sponsored.product_banner_image.url)
+            response_data.append(product_data)
+
+        return Response({
+            'Status': '1',
+            'message': 'Products retrieved successfully',
+            'Data': response_data
+        }, status=status.HTTP_200_OK)

@@ -126,12 +126,22 @@ class CustomerBannerProductSerializer(serializers.ModelSerializer):
         model = BannerProduct
         fields = ['product', 'banner']
 
+
+
 class CustomerBannerSerializer(serializers.ModelSerializer):
     # banner_products = CustomerBannerProductSerializer(many=True)
 
     class Meta:
         model = Banner
         fields = ['id', 'title', 'banner', 'start_date', 'end_date']
+
+
+class CustomerSponsoredSerializer(serializers.ModelSerializer):
+    # banner_products = CustomerBannerProductSerializer(many=True)
+
+    class Meta:
+        model = Sponsored
+        fields = ['id', 'title', 'sponsored_banner', 'start_date', 'end_date']
 
 
 

@@ -25,6 +25,9 @@ urlpatterns = [
     path('special-offers/', SpecialOfferProductsView.as_view(), name='special-offer-products'),
     path('search/special-offers/', SpecialOfferProductsSearchView.as_view(), name='search-special-offer-products'),
 
+    path('sponsored/', CustomerSponsoredListView.as_view(), name='sponsored-list'),
+    path('sponsored/<int:sponsored_id>/', CustomerSponsoredProductsView.as_view(), name='sponsored-products'),
+
     path('search/', ProductSearchView.as_view(), name='global_search'),
     path('search/brand/<int:brand_id>/', BrandProductSearchView.as_view(), name='brand_search'),
     path('brand/', CustomerBrandListView.as_view(), name='brand-list'),

@@ -109,6 +109,35 @@ class SpecialOfferProduct(models.Model):
 
 
 
+class Sponsored(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+    ]
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sponsored')
+    title = models.CharField(max_length=255)
+    sponsored_banner = models.ImageField(upload_to='sponsored_banners/')  # Advertisement banner
+    start_date = models.DateField()  # Offer start date
+    end_date = models.DateField()  # Offer end date
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')  # Admin approval status
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Sponsored by {self.seller.username} - {self.title}"
+
+
+class SponsoredProduct(models.Model):
+    sponsored = models.ForeignKey(Sponsored, on_delete=models.CASCADE, related_name='sponsored_products')
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.product.name} in {self.sponsored.title}"
+
+
+
+
 class Product(models.Model):
     vendor = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True)
