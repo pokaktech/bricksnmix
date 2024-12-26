@@ -58,6 +58,8 @@ urlpatterns = [
     path('seller/total-products/', SellerTotalProductView.as_view(), name='total-products'),
     path('seller/top-selling/', SellerTopSellingProductsAPIView.as_view(), name='top-selling-products'),
 
+    path('seller/banners/', AddBannerView.as_view()),
+
 
 
 

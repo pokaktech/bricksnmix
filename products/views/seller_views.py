@@ -2,12 +2,13 @@ from django.db.models import Sum
 from django.utils import timezone
 
 
-from products.models import Product
-from products.serializers import ProductSerializer
+from products.models import Product, Banner, BannerProduct
+from products.serializers import ProductSerializer, BannerSerializer
 
 from datetime import timedelta, datetime
 
 
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -244,3 +245,16 @@ class SellerTopSellingProductsAPIView(APIView):
             return Response({"Status": "1", "message": "Success", "Data": serializer.data})
         else:
             return Response({"Status": "1", "message": "You are not a seller"})
+        
+
+            
+
+class AddBannerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = BannerSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"Status": "1", "message": "Banner created successfully"}, status=status.HTTP_201_CREATED)
+        return Response({"Status": "0", "message": "Error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)

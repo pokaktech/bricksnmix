@@ -166,3 +166,35 @@ class WishlistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wishlist
         fields = ['id', 'user', 'items']
+
+
+
+
+# seller's banner
+class BannerProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BannerProduct
+        fields = ['product', 'product_banner_image']
+
+class BannerSerializer(serializers.ModelSerializer):
+    banner_products = BannerProductSerializer(many=True, write_only=True)
+
+    class Meta:
+        model = Banner
+        fields = ['title', 'banner', 'start_date', 'end_date', 'banner_products']
+
+    def validate(self, attrs):
+        seller = self.context['request'].user
+        product_ids = [bp['product'].id for bp in attrs['banner_products']]
+        invalid_products = Product.objects.filter(id__in=product_ids).exclude(vendor=seller)
+        if invalid_products.exists():
+            raise serializers.ValidationError("You can only add your own products to the banner.")
+        return attrs
+
+    def create(self, validated_data):
+        banner_products_data = validated_data.pop('banner_products')
+        seller = self.context['request'].user
+        banner = Banner.objects.create(seller=seller, **validated_data)
+        for product_data in banner_products_data:
+            BannerProduct.objects.create(banner=banner, **product_data)
+        return banner
