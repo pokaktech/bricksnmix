@@ -1,9 +1,10 @@
 from django.db.models import Sum
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 
 
-from products.models import Product, Banner, BannerProduct
-from products.serializers import ProductSerializer, BannerSerializer
+from products.models import Product, Brand
+from products.serializers import ProductSerializer, BannerSerializer, BrandSerializer
 
 from datetime import timedelta, datetime
 
@@ -258,3 +259,43 @@ class AddBannerView(APIView):
             serializer.save()
             return Response({"Status": "1", "message": "Banner created successfully"}, status=status.HTTP_201_CREATED)
         return Response({"Status": "0", "message": "Error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+class SellerBrandView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        # brand = get_object_or_404(Brand, owner=user)
+        brand = Brand.objects.filter(owner=user)
+        if brand.exists():
+            serializer = BrandSerializer(brand, many=True)
+            return Response({
+                'Status': '1',
+                'message': 'Sucess',
+                'data': serializer.data
+            })
+        return Response({
+                'Status': '0',
+                'message': 'Not Found'
+            })
+    
+    def post(self, request):
+        user = request.user
+        data = request.data
+        serializer = BrandSerializer(data=data)
+        
+        if serializer.is_valid():
+            serializer.save(owner=user)
+            return Response({
+                'Status': '1',
+                'message': 'Brand created successfully',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'Status': '0',
+            'message': 'Error creating brand',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+        

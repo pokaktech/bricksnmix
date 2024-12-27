@@ -21,13 +21,15 @@ from .models import *
 
 class BrandSerializer(serializers.ModelSerializer):
     # id = serializers.IntegerField(required=True)
+    owner = serializers.CharField(source='owner.username', read_only=True)
     brandname = serializers.CharField(source='name')
     image = serializers.ImageField()
+    brand_banner = serializers.ImageField()
 
     class Meta:
         model = Brand
-        fields = [ 'id', 'brandname', 'image']  
-        read_only_fields = ['id']      
+        fields = [ 'id', 'owner', 'brandname', 'image', 'brand_banner']  
+        read_only_fields = ['id', 'owner']      
 
 
 

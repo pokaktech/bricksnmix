@@ -18,9 +18,16 @@ import uuid
 #         return self.name
     
 class Brand(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+    ]
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='brands/', blank=True, null=True)
-
+    image = models.ImageField(upload_to='brands/images/', blank=True, null=True)
+    brand_banner = models.ImageField(upload_to='brands/banners/', blank=True, null=True)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
     def __str__(self):
         return self.name    
     
