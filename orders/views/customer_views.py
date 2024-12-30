@@ -506,39 +506,42 @@ class CartView(APIView):
             return Response({'Status': '0', 'message': 'Product ID and quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
 
         user = request.user if request.user.is_authenticated else None
-
+        print("user", user)
         session_id = request.headers.get('Session-Id', None)
+        print("session-id", session_id)
         if not session_id:
             if not request.session.session_key:
                 request.session['initialized'] = True
                 request.session.save()
             session_id = request.session.session_key
-        # if user.profile.user_type == "customer":
-            cart, created = Cart.objects.get_or_create(user=user) if user else Cart.objects.get_or_create(session_id=session_id)
+            print("222sessio", session_id)
+    # if user.profile.user_type == "customer":
+        cart, created = Cart.objects.get_or_create(user=user) if user else Cart.objects.get_or_create(session_id=session_id)
+        print("cart or created", cart, created)
 
-            # Retrieve the product
-            try:
-                product = Product.objects.get(id=product_id)
-            except Product.DoesNotExist:
-                return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+        # Retrieve the product
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({'Status': '0', 'message': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
-            # if product.stock < quantity:
-            #     return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+        # if product.stock < quantity:
+        #     return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
 
-            cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
 
-            if created:
-                cart_item.quantity = quantity
-            else:
-                # if cart_item.quantity + quantity > product.stock:
-                    # return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
-                cart_item.quantity += quantity
-
-            cart_item.save()
-
-            return Response({"Status": "1", "message": "Product added to cart successfully"}, status=status.HTTP_201_CREATED)
+        if created:
+            cart_item.quantity = quantity
         else:
-            return Response({"Status": "1", "message": "You must signup as a customer to use the cart and to place order"})
+            # if cart_item.quantity + quantity > product.stock:
+                # return Response({'Status': '0', 'message': 'Insufficient stock'}, status=status.HTTP_400_BAD_REQUEST)
+            cart_item.quantity += quantity
+
+        cart_item.save()
+
+        return Response({"Status": "1", "message": "Product added to cart successfully"}, status=status.HTTP_201_CREATED)
+    # else:
+    #     return Response({"Status": "1", "message": "You must signup as a customer to use the cart and to place order"})
 
     def delete(self, request):
         product_id = request.data.get('product_id')
