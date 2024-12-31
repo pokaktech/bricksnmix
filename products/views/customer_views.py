@@ -12,6 +12,9 @@ from orders.models import OrderItem
 from orders.models import Cart, CartItem
 
 from accounts.models import Company
+from accounts.serializers import CompanySerializer
+
+from accounts.models import Company
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -24,9 +27,63 @@ from rest_framework import generics
 from datetime import timedelta
 from collections import defaultdict
 
+from math import radians, cos, sin, sqrt, atan2
+from django.http import JsonResponse
+from geopy.geocoders import Nominatim
+from django.db.models import F, FloatField
+from django.db.models.functions import ACos, Cos, Radians, Sin
 
 
 
+# Nearest Seller API
+def haversine(lat1, lon1, lat2, lon2):
+    """Calculate distance in km between two lat/lon points using Haversine formula."""
+    R = 6371.0  # Earth radius in km
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1-a))
+    return R * c
+
+
+class NearestSupplierView(APIView):
+    def get(self, request):
+        location = request.GET.get('location')  # e.g., "Kannur"
+        lat = request.GET.get('latitude')
+        lon = request.GET.get('longitude')
+        radius = float(request.GET.get('radius', 10))  # Default to 10 km
+
+        if location:
+            # Convert location name to latitude and longitude
+            geolocator = Nominatim(user_agent="myApp")
+            geo_location = geolocator.geocode(location)
+            if not geo_location:
+                return Response({"Status": "0", "message": f"Location '{location}' not found."})
+            lat, lon = geo_location.latitude, geo_location.longitude
+
+        if not lat or not lon:
+            return Response({"Status": "0", "message": "Please provide latitude and longitude or location."})
+
+        # Find sellers within the radius
+        sellers = Company.objects.annotate(
+            distance_km=6371.0 * 2 * ACos(
+                Cos(Radians(float(lat))) *
+                Cos(Radians(F('latitude'))) *
+                Cos(Radians(F('longitude')) - Radians(float(lon))) +
+                Sin(Radians(float(lat))) * Sin(Radians(F('latitude')))
+            , output_field=FloatField())  # Specify output_field explicitly
+        ).filter(distance_km__lte=radius).order_by('distance_km')
+
+        # seller_data = [{"name": s.name, "distance_km": round(s.distance_km, 2)} for s in sellers]
+        # seller_data = [{"name": s.name, "logo": s.logo.url} for s in sellers]
+        serializer = CompanySerializer(sellers, many=True)
+
+        return JsonResponse({
+            "Status": "1",
+            "message": "Success",
+            "Data": serializer.data
+        })
 
 
 
@@ -120,12 +177,12 @@ class CustomerBrandListView(generics.ListAPIView):
     serializer_class = BrandSerializer
 
     def list(self, request, *args, **kwargs):
-        categories = self.get_queryset()
-        serializer = self.get_serializer(categories, many=True)
+        brands = self.get_queryset()
+        serializer = self.get_serializer(brands, many=True)
 
         return Response({
             'Status': '1',
-            'message': 'Categories fetched successfully',
+            'message': 'Brand fetched successfully',
             'Data': serializer.data
         })
     
@@ -152,8 +209,24 @@ class CustomerBrandDetailView(APIView):
             'Status': '1',
             'message': 'Brand details fetched successfully',
             'Data': product_serializer.data
-                # 'category': CustomerCategorySerializer(category).data,
-            
+        })
+    
+
+class SpecificBrandListView(generics.ListAPIView):
+    serializer_class = BrandSerializer
+
+    def get_queryset(self):
+        seller_id = self.kwargs.get('seller_id')
+        return Brand.objects.filter(owner=seller_id)
+    
+    def list(self, request, *args, **kwargs):
+        brands = self.get_queryset()
+        serializer = self.get_serializer(brands, many=True)
+
+        return Response({
+            'Status': '1',
+            'message': 'Brand fetched successfully',
+            'Data': serializer.data
         })
     
 
@@ -449,7 +522,7 @@ class SimilarProductsView(APIView):
 
 
 
-class CustomerBannerListView(ListAPIView):
+class BannerListView(ListAPIView):
     # permission_classes = [IsAuthenticated]
     serializer_class = CustomerBannerSerializer
 
@@ -491,7 +564,7 @@ class CustomerBannerListView(ListAPIView):
 
 
 
-class CustomerBannerProductsView(APIView):
+class BannerProductsView(APIView):
     permission_classes = [AllowAny]  # Public API
 
     def get(self, request, banner_id):
@@ -527,6 +600,72 @@ class CustomerBannerProductsView(APIView):
             'message': 'Products retrieved successfully',
             'Data': response_data
         }, status=status.HTTP_200_OK)
+    
+
+
+class SpecificBannerList(ListAPIView):
+    # permission_classes = [IsAuthenticated]
+    serializer_class = CustomerBannerSerializer
+
+    def get_queryset(self):
+        # Get seller_id from the URL parameters
+        seller_id = self.kwargs.get('seller_id')
+        return Banner.objects.filter(seller=seller_id, status='Approved')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        response_data = []
+
+        for offer in queryset:
+            offer_data = self.serializer_class(offer).data
+
+            response_data.append(offer_data)
+
+        return Response({
+            'Status': '1',
+            'message': 'Special offers retrieved successfully',
+            'Data': response_data
+        }, status=200)
+    
+
+
+
+# class SpecificBannerProducts(APIView):
+#     permission_classes = [AllowAny]  # Public API
+
+#     def get(self, request, banner_id, seller_id):
+#         try:
+#             # Fetch the offer by ID
+#             banner = Banner.objects.get(id=banner_id, status='Approved')
+#         except Banner.DoesNotExist:
+#             return Response({
+#                 'Status': '0',
+#                 'message': 'Offer not found or not approved',
+#                 'Data': []
+#             }, status=status.HTTP_404_NOT_FOUND)
+
+#         # Fetch all products associated with the offer
+#         banner_products = BannerProduct.objects.filter(banner=banner)
+#         if not banner_products.exists():
+#             return Response({
+#                 'Status': '0',
+#                 'message': 'No products found for this offer',
+#                 'Data': []
+#             }, status=status.HTTP_404_NOT_FOUND)
+
+#         # Serialize the product data
+#         response_data = []
+#         for banner in banner_products:
+#             product_data = ProductSerializer(banner.product).data
+#             # product_data['discount_percentage'] = banner.discount_percentage
+#             product_data['product_banner_image'] = request.build_absolute_uri(banner.product_banner_image.url)
+#             response_data.append(product_data)
+
+#         return Response({
+#             'Status': '1',
+#             'message': 'Products retrieved successfully',
+#             'Data': response_data
+#         }, status=status.HTTP_200_OK)
     
 
 
@@ -615,6 +754,42 @@ class SpecialOfferProductsSearchView(APIView):
         return Response({
             "Status": "1",
             "message": "Search results retrieved successfully.",
+            "data": response_data
+        })
+    
+
+
+
+class SpecificSpecialOfferProducts(APIView):
+
+    def get(self, request, seller_id):
+        # Get all special offer products
+        special_offer_products = SpecialOfferProduct.objects.select_related('product', 'offer').filter(product__vendor=seller_id)
+
+        # Group products by their offer
+        offers_data = defaultdict(lambda: {"products": []})
+        for sop in special_offer_products:
+            offer_id = sop.offer.id
+            offers_data[offer_id]["offer_title"] = sop.offer.title
+            offers_data[offer_id]["banner"] = sop.offer.banner.url if sop.offer.banner else None
+
+            # Serialize product data
+            product_data = ProductSerializer(sop.product).data
+            offers_data[offer_id]["products"].append(product_data)
+
+        # Prepare response format
+        response_data = [
+            {
+                "offer_title": data["offer_title"],
+                "banner": data["banner"],
+                "products": data["products"],
+            }
+            for data in offers_data.values()
+        ]
+
+        return Response({
+            "Status": "1",
+            "message": "Special offer products retrieved successfully",
             "data": response_data
         })
 

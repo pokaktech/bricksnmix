@@ -13,14 +13,20 @@ urlpatterns = [
     # if no usertype, it is for customers.
 
     #customer
+
+    path('nearest-supplier/', NearestSupplierView.as_view()),
+    path('nearest-supplier/<seller_id>/banners/', SpecificBannerList.as_view()),
+    path('nearest-supplier/<seller_id>/special-offers/', SpecificSpecialOfferProducts.as_view()),
+    path('nearest-supplier/<seller_id>/brands/', SpecificBrandListView.as_view()),
+
     path('', ProductDetail.as_view(), name='get-all-products'),
     path('<int:product_id>/', ProductDetail.as_view(), name='get-product-by-id'),
       
     path('trending-brands/', TrendingBrandsView.as_view(), name='get-trending-brands'),
 
     # path('offers/', OfferProductView.as_view(), name='get-offer-products'),
-    path('banners/', CustomerBannerListView.as_view(), name='banners-list'),
-    path('banners/<int:banner_id>/', CustomerBannerProductsView.as_view(), name='banner-products'),
+    path('banners/', BannerListView.as_view(), name='banners-list'),
+    path('banners/<int:banner_id>/', BannerProductsView.as_view(), name='banner-products'),
 
     path('special-offers/', SpecialOfferProductsView.as_view(), name='special-offer-products'),
     path('search/special-offers/', SpecialOfferProductsSearchView.as_view(), name='search-special-offer-products'),

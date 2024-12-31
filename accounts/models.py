@@ -112,6 +112,8 @@ class Company(models.Model):
     vendor = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
     name = models.CharField(max_length=100)
     location = models.CharField(max_length=100)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     mail_id = models.EmailField()
     logo = models.ImageField(upload_to='logos/', blank=True, null=True)
 
