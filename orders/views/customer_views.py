@@ -21,7 +21,7 @@ from rest_framework import status
 
 from channels.layers import get_channel_layer
 
-
+import random
 
 
 
@@ -108,6 +108,11 @@ def get_cart_item(request):
 class PlaceOrderView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
+
+    def generate_order_number(self):
+        prefix = "ORD"
+        random_digits = ''.join(random.choices('0123456789', k=12))  # Generate 12 random digits
+        return f"{prefix}{random_digits}"
     def post(self, request, format=None):
         user = request.user
 
@@ -129,8 +134,8 @@ class PlaceOrderView(APIView):
         if cart_items:
         
             # Generate a unique order number
-            order_number = get_random_string(length=15)
-
+            # order_number = get_random_string(length=15)
+            order_number = self.generate_order_number()
             # Creating the order
             order = CustomerOrder.objects.create(
                 user=user,

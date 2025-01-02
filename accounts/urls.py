@@ -18,6 +18,12 @@ urlpatterns = [
     # but when "-" is used after usertype, it is not for them, but about them.
     # if no usertype, it is for customers.
 
+    #common
+
+    path('password-reset/request-otp/', RequestPasswordResetView.as_view(), name='request_password_reset'),
+    path('password-reset/verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
+    path('password-reset/reset/', ResetPasswordView.as_view(), name='reset_password'),
+
     #customer
     path('customer/signup/', CustomerSignupView.as_view(), name='customer-signup'),
     path('temporary-user-register/', TemporaryUserCreateView.as_view(), name='temporary-user-register'),

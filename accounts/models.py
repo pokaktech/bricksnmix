@@ -107,6 +107,16 @@ post_save.connect(create_profile, sender=User)
 
 
 
+class PasswordResetOTP(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_otps')
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        # OTP is valid for 10 minutes
+        return now() <= self.created_at + timedelta(minutes=10)
+
+
 
 class Company(models.Model):
     vendor = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
