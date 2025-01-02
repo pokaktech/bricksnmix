@@ -308,8 +308,8 @@ EMAIL_HOST = 'smtp.gmail.com'  # Replace with your email provider's SMTP server
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'Pokaktech1@gmail.com'  # Your email address
-# EMAIL_HOST_PASSWORD = 'zbrg oula jiji ujtn'  # Your email password
-EMAIL_HOST_PASSWORD = 'fijt ripa ahrs cver'  # Your email password
+# EMAIL_HOST_PASSWORD = ''  # Your email password
+EMAIL_HOST_PASSWORD = ''  # Your email password
 DEFAULT_FROM_EMAIL = 'Pokaktech1@gmail.com'  # Default "from" email address
 
 
